@@ -1,0 +1,144 @@
+/* Main styles for PromptComp */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.navbar {
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    border-radius: 6px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    font-weight: 600;
+}
+
+textarea {
+    resize: vertical;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+/* Template list styling */
+.template-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.template-item {
+    position: relative;
+    transition: background-color 0.2s;
+    padding: 12px 15px;
+    font-weight: 500;
+}
+
+.template-item:hover {
+    background-color: #e9f0ff;
+}
+
+.template-hover-info {
+    display: none;
+    position: absolute;
+    right: -350px;
+    top: 0;
+    width: 350px;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    z-index: 100;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.template-item:hover .template-hover-info {
+    display: block;
+}
+
+/* Playground styling */
+.playground-container {
+    padding: 0 15px;
+}
+
+.playground-side {
+    padding: 0 10px;
+}
+
+.response-container {
+    min-height: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    font-family: monospace;
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.model-settings {
+    padding: 12px;
+    background-color: rgba(0,0,0,0.03);
+    border-radius: 4px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Copy notification */
+.copy-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 4px;
+    z-index: 1000;
+    animation: fadeInOut 2s ease;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Loading animation */
+.loading-animation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .template-hover-info {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        right: auto;
+        width: 90%;
+        max-width: 400px;
+    }
+    
+    .playground-side {
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .row > div {
+        margin-bottom: 15px;
+    }
+}

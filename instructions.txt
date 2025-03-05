@@ -1,0 +1,84 @@
+Build PromptComp Application
+
+  Overview
+
+  I need to create a web application called "PromptComp" that helps users to easily compare the CHATGPT response from current and previous prompt template information language models like ChatGPT. The application will integrate with PromptLayer API for retrieving in prompt template information using the API.  
+
+  Key Features
+
+  1. Dashboard to view all prompt templates. Only list prompt template name on this page. When user hovers over prompt name display all of the prompt parms like temperature. User selected a prompt template name they want then they proceed to step 2. 
+  2. Prompt Compare Interface :  provide current and previous template information. initially, all previous fields copied to current fields. The user can make changes to the current version yet not the previous version. The user can modify ANY of the current parms. 
+Response generation and comparison. once user makes prompt engineering changes provide one button to generate response. when the user selected the Generate Response button the app will call the openAI aPI and fill in the Current Respons using the current template parms AND fill in the Previous Reponse text using the existing parms. At that point its  Very important user can easily see the current versus previous chatgpt response side by side. use smaller easily readable fonts and response should output a table format.
+  4. AI-powered prompt improvement suggestions that put the suggestions received from chatgpt and overide the current user prompt in the interface when user select improvement suggestions.
+  5. After user is done and the expectation is that they have prompt engineeed the best results / respons in  with current version, provide a button to store the Prompt Compare interface into markdown language in same directory as project directory for user to download after achieving best prompt response results 
+ 
+  5. Integration with external APIs (PromptLayer, OpenAI)
+
+  Technical Stack
+
+  - Backend: Python + Flask
+  - Frontend: HTML, CSS, JavaScript (with Bootstrap)
+  - APIs: PromptLayer API, OpenAI API
+  - Data Storage: Uses external PromptLayer service, store the template information into markdown language easy to read that is same and the comparison interface saving all current versus previous template and prompt details. ad button to interface to download comparison report 
+  - Configuration: Environment variables for API keys
+
+  Detailed Requirements
+
+  1. Project Structure
+
+  Create a Flask web application with this structure:
+  - app.py - Main Flask application
+  - config.py - Configuration settings
+  - /templates - HTML templates
+  - /static - CSS and JavaScript files
+  - /utils - Utility modules for API integrations
+  - requirements.txt - Python dependencies
+  - run.sh - Startup script
+
+  2. API Integrations
+
+  Implement two API integration modules:
+  - utils/promptlayer_api.py - For PromptLayer interactions
+  - utils/openai_api.py - For OpenAI completions
+
+  The PromptLayer API module should include these functions:
+  - Get all templates
+  - Get specific template detailsy
+
+  3. User Interface
+
+  Create these 3 templates:
+  - templates/base.html - Base template with navigation
+  - templates/index.html - Dashboard listing all templates
+  - templates/template_and_response_compare.html - Side-by-side comparison view one template selected  and response comparision 
+
+
+  4. Comparison Interface Requirements
+
+  The template comparison page should from top to bottom:
+  - Include "Generate Current & Previous Responses" and "Suggest Prompt Improvements" buttons  button on top right
+  - when user selected "suggest improvements" automatically copy Al suggestion from chatgpt into the current user prompt
+  - Support side-by-side comparison of response versions making sure this can be easily viewed. use smaller fonts if needed.
+  - Support side-by-side comparison of template's parameter versions
+  - Use editable text areas with the current version's values prefilled in both sides
+
+  5. Configuration and API Keys
+
+  Set up environment variables for API keys. Key are in the .env file:
+  - PROMPTLAYER_API_KEY
+  - OPENAI_API_KEY
+
+  6. Special Features
+
+  - Template versioning and comparison
+  - AI-based improvement suggestions for prompts
+  - Interactive comparison of responses
+
+  Implementation Notes
+
+  1. The application should run on port 9999
+  2. All API keys should be loaded from environment variables
+  5. Error handling for API failures should be robust and do not start app unless promptlayer API calls to get list of templates and parms are successful. 
+  6. Add proper logging throughout the application
+
+  build this application for me following these specifications?

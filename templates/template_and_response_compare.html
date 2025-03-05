@@ -1,0 +1,671 @@
+{% extends "base.html" %}
+
+{% block title %}PromptComp - Comparison Playground{% endblock %}
+
+{% block content %}
+
+<div class="playground-container">
+    <div class="playground-header mb-3">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2>Prompt Comparison Playground</h2>
+            </div>
+            <div class="col-md-6 d-flex justify-content-end">
+                <div class="template-selector">
+                    <select id="templateSelector" class="form-select me-2">
+                        <option value="">Select a template...</option>
+                        {% for template in templates %}
+                        <option value="{{ template.name }}">{{ template.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button id="exportButton" class="btn btn-secondary">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="playground-content">
+        <div class="row">
+            <!-- Left side -->
+            <div class="col-md-6 playground-side">
+                <div class="card border-primary mb-3">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Previous Version</h5>
+                        <div class="actions">
+                            <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#leftParamsModal">
+                                <i class="bi bi-gear"></i> Parameters
+                            </button>
+                            <button id="leftRunButton" class="btn btn-sm btn-light ms-2">Run</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Prompt textareas in a row -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="leftSystemMessage" class="form-label">System Message</label>
+                                <textarea id="leftSystemMessage" class="form-control message-textarea" rows="6" readonly></textarea>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="leftUserMessage" class="form-label">User Message</label>
+                                <textarea id="leftUserMessage" class="form-control message-textarea" rows="6" readonly></textarea>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="leftAssistantMessage" class="form-label">Assistant Message</label>
+                                <textarea id="leftAssistantMessage" class="form-control message-textarea" rows="6" readonly></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Response area -->
+                        <div class="response-area">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0">Response</label>
+                                <button id="leftCopyButton" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                            <div id="leftResponse" class="response-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right side -->
+            <div class="col-md-6 playground-side">
+                <div class="card border-success mb-3">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Current Version</h5>
+                        <div class="actions">
+                            <button class="btn btn-sm btn-light me-2" data-bs-toggle="modal" data-bs-target="#rightParamsModal">
+                                <i class="bi bi-gear"></i> Parameters
+                            </button>
+                            <button id="rightRunButton" class="btn btn-sm btn-light">Run</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Prompt textareas in a row -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label for="rightSystemMessage" class="form-label">System Message</label>
+                                    <button id="suggestSystemButton" class="btn btn-sm btn-outline-warning">Suggest</button>
+                                </div>
+                                <textarea id="rightSystemMessage" class="form-control message-textarea" rows="6"></textarea>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label for="rightUserMessage" class="form-label">User Message</label>
+                                    <button id="suggestUserButton" class="btn btn-sm btn-outline-warning">Suggest</button>
+                                </div>
+                                <textarea id="rightUserMessage" class="form-control message-textarea" rows="6"></textarea>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label for="rightAssistantMessage" class="form-label">Assistant Message</label>
+                                    <button id="suggestAssistantButton" class="btn btn-sm btn-outline-warning">Suggest</button>
+                                </div>
+                                <textarea id="rightAssistantMessage" class="form-control message-textarea" rows="6"></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Response area -->
+                        <div class="response-area">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0">Response</label>
+                                <button id="rightCopyButton" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                            <div id="rightResponse" class="response-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Left Parameters Modal -->
+<div class="modal fade" id="leftParamsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Previous Version Parameters</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="leftModel" class="form-label">Model</label>
+                        <select id="leftModel" class="form-select" disabled>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="leftMaxTokens" class="form-label">Maximum length</label>
+                        <input type="number" id="leftMaxTokens" class="form-control" value="500" readonly>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="leftTemperature" class="form-label">Temperature: <span id="leftTempValue">0.7</span></label>
+                    <input type="range" id="leftTemperature" class="form-range" min="0" max="2" step="0.1" value="0.7" disabled>
+                    <div class="d-flex justify-content-between">
+                        <small>Precise</small>
+                        <small>Creative</small>
+                    </div>
+                </div>
+                <div id="leftAdditionalParams">
+                    <!-- Additional parameters will be added here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Right Parameters Modal -->
+<div class="modal fade" id="rightParamsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Current Version Parameters</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="rightModel" class="form-label">Model</label>
+                        <select id="rightModel" class="form-select">
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="rightMaxTokens" class="form-label">Maximum length</label>
+                        <input type="number" id="rightMaxTokens" class="form-control" value="500">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="rightTemperature" class="form-label">Temperature: <span id="rightTempValue">0.7</span></label>
+                    <input type="range" id="rightTemperature" class="form-range" min="0" max="2" step="0.1" value="0.7">
+                    <div class="d-flex justify-content-between">
+                        <small>Precise</small>
+                        <small>Creative</small>
+                    </div>
+                </div>
+                <div id="rightAdditionalParams">
+                    <!-- Additional parameters will be added here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements - main UI
+    const templateSelector = document.getElementById('templateSelector');
+    const exportButton = document.getElementById('exportButton');
+    const leftRunButton = document.getElementById('leftRunButton');
+    const rightRunButton = document.getElementById('rightRunButton');
+    
+    // Suggestion buttons
+    const suggestSystemButton = document.getElementById('suggestSystemButton');
+    const suggestUserButton = document.getElementById('suggestUserButton');
+    const suggestAssistantButton = document.getElementById('suggestAssistantButton');
+    
+    // Left side elements
+    const leftSystemMessage = document.getElementById('leftSystemMessage');
+    const leftUserMessage = document.getElementById('leftUserMessage');
+    const leftAssistantMessage = document.getElementById('leftAssistantMessage');
+    const leftResponse = document.getElementById('leftResponse');
+    const leftCopyButton = document.getElementById('leftCopyButton');
+    const leftModel = document.getElementById('leftModel');
+    const leftTemperature = document.getElementById('leftTemperature');
+    const leftTempValue = document.getElementById('leftTempValue');
+    const leftMaxTokens = document.getElementById('leftMaxTokens');
+    const leftAdditionalParams = document.getElementById('leftAdditionalParams');
+    
+    // Right side elements
+    const rightSystemMessage = document.getElementById('rightSystemMessage');
+    const rightUserMessage = document.getElementById('rightUserMessage');
+    const rightAssistantMessage = document.getElementById('rightAssistantMessage');
+    const rightResponse = document.getElementById('rightResponse');
+    const rightCopyButton = document.getElementById('rightCopyButton');
+    const rightModel = document.getElementById('rightModel');
+    const rightTemperature = document.getElementById('rightTemperature');
+    const rightTempValue = document.getElementById('rightTempValue');
+    const rightMaxTokens = document.getElementById('rightMaxTokens');
+    const rightAdditionalParams = document.getElementById('rightAdditionalParams');
+    
+    // Temperature slider events
+    leftTemperature.addEventListener('input', function() {
+        leftTempValue.textContent = this.value;
+    });
+    
+    rightTemperature.addEventListener('input', function() {
+        rightTempValue.textContent = this.value;
+    });
+    
+    // Check for template in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const templateParam = urlParams.get('template');
+    if (templateParam) {
+        templateSelector.value = templateParam;
+        loadTemplate(templateParam);
+    }
+    
+    // Template selection
+    templateSelector.addEventListener('change', function() {
+        const templateName = this.value;
+        if (templateName) {
+            loadTemplate(templateName);
+        }
+    });
+    
+    // Load template function
+    async function loadTemplate(templateName) {
+        try {
+            const response = await fetch(`/template/${templateName}`);
+            if (response.ok) {
+                const templateData = await response.json();
+                
+                // Set message values
+                leftSystemMessage.value = templateData.system_message || '';
+                leftUserMessage.value = templateData.user_message || '';
+                leftAssistantMessage.value = templateData.assistant_message || '';
+                
+                rightSystemMessage.value = templateData.system_message || '';
+                rightUserMessage.value = templateData.user_message || '';
+                rightAssistantMessage.value = templateData.assistant_message || '';
+                
+                // If API returned a single prompt field instead of separate messages
+                if (templateData.prompt && !templateData.system_message) {
+                    leftSystemMessage.value = "You are a helpful AI assistant.";
+                    leftUserMessage.value = templateData.prompt;
+                    leftAssistantMessage.value = "";
+                    
+                    rightSystemMessage.value = "You are a helpful AI assistant.";
+                    rightUserMessage.value = templateData.prompt;
+                    rightAssistantMessage.value = "";
+                }
+                
+                // Set model values
+                leftModel.value = templateData.model || 'gpt-3.5-turbo';
+                rightModel.value = templateData.model || 'gpt-3.5-turbo';
+                
+                // Set temperature values
+                const tempValue = templateData.temperature || 0.7;
+                leftTemperature.value = tempValue;
+                leftTempValue.textContent = tempValue;
+                rightTemperature.value = tempValue;
+                rightTempValue.textContent = tempValue;
+                
+                // Set max tokens values
+                const maxTokensValue = templateData.max_tokens || 500;
+                leftMaxTokens.value = maxTokensValue;
+                rightMaxTokens.value = maxTokensValue;
+                
+                // Clear additional params
+                leftAdditionalParams.innerHTML = '';
+                rightAdditionalParams.innerHTML = '';
+                
+                // Add any additional parameters
+                for (const [key, value] of Object.entries(templateData)) {
+                    if (!['system_message', 'user_message', 'assistant_message', 'prompt', 'model', 'temperature', 'max_tokens'].includes(key)) {
+                        addAdditionalParam(key, value);
+                    }
+                }
+                
+                // Clear responses
+                leftResponse.innerHTML = '';
+                rightResponse.innerHTML = '';
+            } else {
+                handleError(new Error('Failed to load template'));
+            }
+        } catch (error) {
+            handleError(error);
+        }
+    }
+    
+    // Add additional parameter to both sides
+    function addAdditionalParam(key, value) {
+        // Left side
+        const leftParamDiv = document.createElement('div');
+        leftParamDiv.className = 'mb-3';
+        leftParamDiv.innerHTML = `
+            <label for="left_${key}" class="form-label">${key}</label>
+            <input type="text" id="left_${key}" class="form-control additional-param" 
+                   data-param-name="${key}" value="${value}" readonly>
+        `;
+        leftAdditionalParams.appendChild(leftParamDiv);
+        
+        // Right side
+        const rightParamDiv = document.createElement('div');
+        rightParamDiv.className = 'mb-3';
+        rightParamDiv.innerHTML = `
+            <label for="right_${key}" class="form-label">${key}</label>
+            <input type="text" id="right_${key}" class="form-control additional-param" 
+                   data-param-name="${key}" value="${value}">
+        `;
+        rightAdditionalParams.appendChild(rightParamDiv);
+    }
+    
+    // Run left side
+    leftRunButton.addEventListener('click', async function() {
+        await generateResponse('left');
+    });
+    
+    // Run right side
+    rightRunButton.addEventListener('click', async function() {
+        await generateResponse('right');
+    });
+    
+    // Generate response function
+    async function generateResponse(side) {
+        const systemMessageElement = document.getElementById(`${side}SystemMessage`);
+        const userMessageElement = document.getElementById(`${side}UserMessage`);
+        const assistantMessageElement = document.getElementById(`${side}AssistantMessage`);
+        const modelElement = document.getElementById(`${side}Model`);
+        const temperatureElement = document.getElementById(`${side}Temperature`);
+        const maxTokensElement = document.getElementById(`${side}MaxTokens`);
+        const responseElement = document.getElementById(`${side}Response`);
+        const runButton = document.getElementById(`${side}RunButton`);
+        
+        const params = {
+            system_message: systemMessageElement.value,
+            user_message: userMessageElement.value,
+            assistant_message: assistantMessageElement.value,
+            model: modelElement.value,
+            temperature: parseFloat(temperatureElement.value),
+            max_tokens: parseInt(maxTokensElement.value)
+        };
+        
+        // Add additional parameters
+        const additionalParamInputs = document.querySelectorAll(`#${side}AdditionalParams .additional-param`);
+        additionalParamInputs.forEach(input => {
+            params[input.dataset.paramName] = input.value;
+        });
+        
+        // Show loading
+        const originalText = showLoading(runButton, 'Running...');
+        responseElement.innerHTML = '<div class="loading-animation"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        
+        try {
+            const response = await fetch('/generate_response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(params),
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                responseElement.innerHTML = formatResponseForDisplay(data.response);
+            } else {
+                responseElement.innerHTML = '<div class="alert alert-danger">Failed to generate response</div>';
+            }
+        } catch (error) {
+            responseElement.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+        } finally {
+            hideLoading(runButton, originalText);
+        }
+    }
+    
+    // Suggest improvements for system message
+    suggestSystemButton.addEventListener('click', async function() {
+        await suggestImprovement('system', suggestSystemButton, rightSystemMessage);
+    });
+    
+    // Suggest improvements for user message
+    suggestUserButton.addEventListener('click', async function() {
+        await suggestImprovement('user', suggestUserButton, rightUserMessage);
+    });
+    
+    // Suggest improvements for assistant message
+    suggestAssistantButton.addEventListener('click', async function() {
+        await suggestImprovement('assistant', suggestAssistantButton, rightAssistantMessage);
+    });
+    
+    // Generic function to suggest improvements for a specific message type
+    async function suggestImprovement(messageType, button, textareaElement) {
+        const originalText = showLoading(button, 'Suggesting...');
+        
+        try {
+            // Create a request with all messages but focus on the specific one
+            const requestData = {
+                system_message: rightSystemMessage.value,
+                user_message: rightUserMessage.value,
+                assistant_message: rightAssistantMessage.value,
+                model: rightModel.value,
+                message_type: messageType  // Tell the API which message to focus on
+            };
+            
+            const response = await fetch('/suggest_improvements', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData),
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Update only the specific message based on message_type
+                switch(messageType) {
+                    case 'system':
+                        if (data.system_message) rightSystemMessage.value = data.system_message;
+                        break;
+                    case 'user':
+                        if (data.user_message) rightUserMessage.value = data.user_message;
+                        break;
+                    case 'assistant':
+                        if (data.assistant_message) rightAssistantMessage.value = data.assistant_message;
+                        break;
+                }
+            } else {
+                handleError(new Error('Failed to get suggestions'));
+            }
+        } catch (error) {
+            handleError(error);
+        } finally {
+            hideLoading(button, originalText);
+        }
+    }
+    
+    // Export comparison
+    exportButton.addEventListener('click', async function() {
+        const originalText = showLoading(exportButton, 'Exporting...');
+        
+        try {
+            // Get template name
+            const templateName = templateSelector.value || 'comparison';
+            
+            // Get left side params
+            const leftParams = {
+                system_message: leftSystemMessage.value,
+                user_message: leftUserMessage.value,
+                assistant_message: leftAssistantMessage.value,
+                model: leftModel.value,
+                temperature: parseFloat(leftTemperature.value),
+                max_tokens: parseInt(leftMaxTokens.value)
+            };
+            
+            // Add left additional parameters
+            const leftAdditionalParamInputs = document.querySelectorAll('#leftAdditionalParams .additional-param');
+            leftAdditionalParamInputs.forEach(input => {
+                leftParams[input.dataset.paramName] = input.value;
+            });
+            
+            // Get right side params
+            const rightParams = {
+                system_message: rightSystemMessage.value,
+                user_message: rightUserMessage.value,
+                assistant_message: rightAssistantMessage.value,
+                model: rightModel.value,
+                temperature: parseFloat(rightTemperature.value),
+                max_tokens: parseInt(rightMaxTokens.value)
+            };
+            
+            // Add right additional parameters
+            const rightAdditionalParamInputs = document.querySelectorAll('#rightAdditionalParams .additional-param');
+            rightAdditionalParamInputs.forEach(input => {
+                rightParams[input.dataset.paramName] = input.value;
+            });
+            
+            // Get responses
+            const leftResponseText = leftResponse.textContent || '';
+            const rightResponseText = rightResponse.textContent || '';
+            
+            // Call export API
+            const response = await fetch('/export_comparison', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    template_name: templateName,
+                    left_params: leftParams,
+                    right_params: rightParams,
+                    left_response: leftResponseText,
+                    right_response: rightResponseText
+                }),
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Trigger download
+                    window.location.href = `/download_comparison/${data.filename}`;
+                } else {
+                    throw new Error('Failed to export comparison');
+                }
+            } else {
+                throw new Error('Failed to export comparison');
+            }
+        } catch (error) {
+            handleError(error);
+        } finally {
+            hideLoading(exportButton, originalText);
+        }
+    });
+    
+    // Copy response buttons
+    leftCopyButton.addEventListener('click', function() {
+        copyToClipboard(leftResponse.textContent);
+    });
+    
+    rightCopyButton.addEventListener('click', function() {
+        copyToClipboard(rightResponse.textContent);
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .playground-container {
+        min-height: calc(100vh - 120px);
+    }
+    
+    .playground-side {
+        padding: 0 10px;
+    }
+    
+    .response-container {
+        min-height: 250px;
+        max-height: 350px;
+        overflow-y: auto;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        font-family: monospace;
+        font-size: 0.875rem;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    
+    .loading-animation {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100px;
+    }
+    
+    .form-range {
+        padding: 0;
+    }
+    
+    textarea {
+        font-family: monospace;
+        font-size: 0.875rem;
+        resize: vertical;
+    }
+    
+    /* Aligned message textareas */
+    .message-textarea {
+        height: 160px;
+        font-size: 0.8rem;
+        line-height: 1.4;
+    }
+    
+    /* Make the Assistant message slightly different */
+    #leftAssistantMessage, #rightAssistantMessage {
+        background-color: #f8fff8;
+    }
+    
+    /* Make the System message slightly different */
+    #leftSystemMessage, #rightSystemMessage {
+        background-color: #f8f8ff;
+    }
+    
+    /* Smaller input labels to save space */
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+        color: #555;
+    }
+    
+    /* Modal styling */
+    .modal-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    /* Suggestion buttons */
+    .btn-outline-warning {
+        color: #fd7e14;
+        border-color: #fd7e14;
+        padding: 0.1rem 0.4rem;
+        font-size: 0.75rem;
+    }
+    
+    .btn-outline-warning:hover {
+        color: white;
+        background-color: #fd7e14;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}PromptComp - Templates{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Prompt Templates</h1>
+            <a href="{{ url_for('compare') }}" class="btn btn-primary">Open Comparison Playground</a>
+        </div>
+        
+        {% if error_message %}
+        <div class="alert alert-danger" role="alert">
+            {{ error_message }}
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Available Templates</h5>
+            </div>
+            <div class="card-body">
+                {% if templates %}
+                <div class="list-group template-list">
+                    {% for template in templates %}
+                    <a href="{{ url_for('compare') }}?template={{ template.name }}" 
+                       class="list-group-item list-group-item-action template-item"
+                       data-template-name="{{ template.name }}">
+                        {{ template.name }}
+                        <div class="template-hover-info">
+                            <p><strong>Parameters:</strong></p>
+                            <table class="table table-sm table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th>Model</th>
+                                        <td>{{ template.model }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Temperature</th>
+                                        <td>{{ template.temperature }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Max Tokens</th>
+                                        <td>{{ template.max_tokens }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p>No templates found. Please check your PromptLayer API connection.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
