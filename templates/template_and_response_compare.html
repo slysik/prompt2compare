@@ -5,21 +5,21 @@
 {% block content %}
 
 <div class="playground-container">
-    <div class="playground-header mb-3">
+    <div class="playground-header mb-1">
         <div class="row align-items-center">
             <div class="col-md-6">
-                <h2>Prompt Comparison Playground</h2>
+                <h4>Prompt Comparison Playground</h4>
             </div>
             <div class="col-md-6 d-flex justify-content-end">
                 <div class="template-selector">
-                    <select id="templateSelector" class="form-select me-2">
+                    <select id="templateSelector" class="form-select form-select-sm me-2">
                         <option value="">Select a template...</option>
                         {% for template in templates %}
                         <option value="{{ template.name }}">{{ template.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <button id="exportButton" class="btn btn-secondary">Export</button>
+                <button id="exportButton" class="btn btn-sm btn-secondary">Export</button>
             </div>
         </div>
     </div>
@@ -40,20 +40,20 @@
                     </div>
                     <div class="card-body">
                         <!-- Prompt textareas in a row -->
-                        <div class="row mb-3">
+                        <div class="row mb-2">
                             <div class="col-md-4">
                                 <label for="leftSystemMessage" class="form-label">System Message</label>
-                                <textarea id="leftSystemMessage" class="form-control message-textarea" rows="4" readonly></textarea>
+                                <textarea id="leftSystemMessage" class="form-control message-textarea" rows="3" readonly></textarea>
                             </div>
                             
                             <div class="col-md-4">
                                 <label for="leftUserMessage" class="form-label">User Message</label>
-                                <textarea id="leftUserMessage" class="form-control message-textarea" rows="4" readonly></textarea>
+                                <textarea id="leftUserMessage" class="form-control message-textarea" rows="3" readonly></textarea>
                             </div>
                             
                             <div class="col-md-4">
                                 <label for="leftAssistantMessage" class="form-label">Assistant Message</label>
-                                <textarea id="leftAssistantMessage" class="form-control message-textarea" rows="4" readonly></textarea>
+                                <textarea id="leftAssistantMessage" class="form-control message-textarea" rows="3" readonly></textarea>
                             </div>
                         </div>
                         
@@ -85,13 +85,13 @@
                     </div>
                     <div class="card-body">
                         <!-- Prompt textareas in a row -->
-                        <div class="row mb-3">
+                        <div class="row mb-2">
                             <div class="col-md-4">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <label for="rightSystemMessage" class="form-label">System Message</label>
                                     <button id="suggestSystemButton" class="btn btn-sm btn-outline-warning">Suggest</button>
                                 </div>
-                                <textarea id="rightSystemMessage" class="form-control message-textarea" rows="4"></textarea>
+                                <textarea id="rightSystemMessage" class="form-control message-textarea" rows="3"></textarea>
                             </div>
                             
                             <div class="col-md-4">
@@ -99,7 +99,7 @@
                                     <label for="rightUserMessage" class="form-label">User Message</label>
                                     <button id="suggestUserButton" class="btn btn-sm btn-outline-warning">Suggest</button>
                                 </div>
-                                <textarea id="rightUserMessage" class="form-control message-textarea" rows="4"></textarea>
+                                <textarea id="rightUserMessage" class="form-control message-textarea" rows="3"></textarea>
                             </div>
                             
                             <div class="col-md-4">
@@ -107,7 +107,7 @@
                                     <label for="rightAssistantMessage" class="form-label">Assistant Message</label>
                                     <button id="suggestAssistantButton" class="btn btn-sm btn-outline-warning">Suggest</button>
                                 </div>
-                                <textarea id="rightAssistantMessage" class="form-control message-textarea" rows="4"></textarea>
+                                <textarea id="rightAssistantMessage" class="form-control message-textarea" rows="3"></textarea>
                             </div>
                         </div>
                         
@@ -297,12 +297,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 const leftVersionTag = document.getElementById('leftVersionInfo');
                 const rightVersionTag = document.getElementById('rightVersionInfo');
                 
+                // Log template data for debugging
+                console.log('Template data received:', templateData);
+                
                 if (templateData.version) {
                     leftVersionTag.textContent = `v${templateData.version}`;
                     rightVersionTag.textContent = `v${templateData.version}`;
+                    console.log('Version found:', templateData.version);
                 } else {
-                    leftVersionTag.textContent = '';
-                    rightVersionTag.textContent = '';
+                    // Try to look for version in additional fields
+                    const versionField = Object.keys(templateData).find(key => 
+                        key.toLowerCase().includes('version') || key.toLowerCase() === 'v');
+                    
+                    if (versionField && templateData[versionField]) {
+                        const versionValue = templateData[versionField];
+                        leftVersionTag.textContent = `v${versionValue}`;
+                        rightVersionTag.textContent = `v${versionValue}`;
+                        console.log('Version found in field:', versionField, versionValue);
+                    } else {
+                        leftVersionTag.textContent = '';
+                        rightVersionTag.textContent = '';
+                        console.log('No version found in template data');
+                    }
                 }
                 
                 // If API returned a single prompt field instead of separate messages
@@ -515,6 +531,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show more specific error message
             console.error('Suggestion error:', error);
             alert(`Suggestion error: ${error.message || 'Unknown error occurred'}`);
+            
+            // Add debug output for API version issues
+            if (!templateData || !templateData.version) {
+                console.warn('No version info found in template data:', templateData);
+            }
         } finally {
             hideLoading(button, originalText);
         }
@@ -613,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% block extra_css %}
 <style>
     .playground-container {
-        min-height: calc(100vh - 80px);
+        min-height: calc(100vh - 50px);
         width: 100%;
         padding: 0;
         margin: 0;
@@ -635,10 +656,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     .response-container {
-        min-height: 400px;
-        max-height: 70vh;
+        min-height: 420px;
+        max-height: 80vh;
         overflow-y: auto;
-        padding: 15px;
+        padding: 10px;
         border-radius: 4px;
         font-family: monospace;
         font-size: 0.875rem;
@@ -664,9 +685,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /* Aligned message textareas */
     .message-textarea {
-        height: 100px;
+        height: 80px;
         font-size: 0.8rem;
         line-height: 1.4;
+        max-height: 80px;
+        min-height: 80px;
     }
     
     /* Make the Assistant message slightly different */
@@ -681,10 +704,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /* Smaller input labels to save space */
     .form-label {
-        font-size: 0.85rem;
+        font-size: 0.80rem;
         font-weight: 600;
-        margin-bottom: 0.2rem;
+        margin-bottom: 0.1rem;
         color: #555;
+    }
+    
+    .card-body {
+        padding: 0.5rem 1rem;
     }
     
     /* Modal styling */
