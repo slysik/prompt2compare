@@ -30,7 +30,7 @@
             <div class="col-md-6 playground-side">
                 <div class="card border-primary mb-3">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Previous Version</h5>
+                        <h5 class="card-title mb-0">Latest Version <span id="leftVersionInfo" class="version-tag"></span></h5>
                         <div class="actions">
                             <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#leftParamsModal">
                                 <i class="bi bi-gear"></i> Parameters
@@ -43,17 +43,17 @@
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label for="leftSystemMessage" class="form-label">System Message</label>
-                                <textarea id="leftSystemMessage" class="form-control message-textarea" rows="6" readonly></textarea>
+                                <textarea id="leftSystemMessage" class="form-control message-textarea" rows="4" readonly></textarea>
                             </div>
                             
                             <div class="col-md-4">
                                 <label for="leftUserMessage" class="form-label">User Message</label>
-                                <textarea id="leftUserMessage" class="form-control message-textarea" rows="6" readonly></textarea>
+                                <textarea id="leftUserMessage" class="form-control message-textarea" rows="4" readonly></textarea>
                             </div>
                             
                             <div class="col-md-4">
                                 <label for="leftAssistantMessage" class="form-label">Assistant Message</label>
-                                <textarea id="leftAssistantMessage" class="form-control message-textarea" rows="6" readonly></textarea>
+                                <textarea id="leftAssistantMessage" class="form-control message-textarea" rows="4" readonly></textarea>
                             </div>
                         </div>
                         
@@ -75,7 +75,7 @@
             <div class="col-md-6 playground-side">
                 <div class="card border-success mb-3">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Current Version</h5>
+                        <h5 class="card-title mb-0">New Version <span id="rightVersionInfo" class="version-tag"></span></h5>
                         <div class="actions">
                             <button class="btn btn-sm btn-light me-2" data-bs-toggle="modal" data-bs-target="#rightParamsModal">
                                 <i class="bi bi-gear"></i> Parameters
@@ -91,7 +91,7 @@
                                     <label for="rightSystemMessage" class="form-label">System Message</label>
                                     <button id="suggestSystemButton" class="btn btn-sm btn-outline-warning">Suggest</button>
                                 </div>
-                                <textarea id="rightSystemMessage" class="form-control message-textarea" rows="6"></textarea>
+                                <textarea id="rightSystemMessage" class="form-control message-textarea" rows="4"></textarea>
                             </div>
                             
                             <div class="col-md-4">
@@ -99,7 +99,7 @@
                                     <label for="rightUserMessage" class="form-label">User Message</label>
                                     <button id="suggestUserButton" class="btn btn-sm btn-outline-warning">Suggest</button>
                                 </div>
-                                <textarea id="rightUserMessage" class="form-control message-textarea" rows="6"></textarea>
+                                <textarea id="rightUserMessage" class="form-control message-textarea" rows="4"></textarea>
                             </div>
                             
                             <div class="col-md-4">
@@ -107,7 +107,7 @@
                                     <label for="rightAssistantMessage" class="form-label">Assistant Message</label>
                                     <button id="suggestAssistantButton" class="btn btn-sm btn-outline-warning">Suggest</button>
                                 </div>
-                                <textarea id="rightAssistantMessage" class="form-control message-textarea" rows="6"></textarea>
+                                <textarea id="rightAssistantMessage" class="form-control message-textarea" rows="4"></textarea>
                             </div>
                         </div>
                         
@@ -293,6 +293,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 rightUserMessage.value = templateData.user_message || '';
                 rightAssistantMessage.value = templateData.assistant_message || '';
                 
+                // Update version tags if version information is available
+                const leftVersionTag = document.getElementById('leftVersionInfo');
+                const rightVersionTag = document.getElementById('rightVersionInfo');
+                
+                if (templateData.version) {
+                    leftVersionTag.textContent = `v${templateData.version}`;
+                    rightVersionTag.textContent = `v${templateData.version}`;
+                } else {
+                    leftVersionTag.textContent = '';
+                    rightVersionTag.textContent = '';
+                }
+                
                 // If API returned a single prompt field instead of separate messages
                 if (templateData.prompt && !templateData.system_message) {
                     leftSystemMessage.value = "You are a helpful AI assistant.";
@@ -447,6 +459,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalText = showLoading(button, 'Suggesting...');
         
         try {
+            // Validate that we have the required data
+            if (!rightSystemMessage.value && messageType !== 'system') {
+                throw new Error('System message is required');
+            }
+            
+            if (!rightUserMessage.value && messageType !== 'user') {
+                throw new Error('User message is required');
+            }
+            
             // Create a request with all messages but focus on the specific one
             const requestData = {
                 system_message: rightSystemMessage.value,
@@ -467,23 +488,33 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const data = await response.json();
                 
+                if (!data || Object.keys(data).length === 0) {
+                    throw new Error('No suggestions received from the server');
+                }
+                
                 // Update only the specific message based on message_type
                 switch(messageType) {
                     case 'system':
                         if (data.system_message) rightSystemMessage.value = data.system_message;
+                        else throw new Error('No system message suggestion received');
                         break;
                     case 'user':
                         if (data.user_message) rightUserMessage.value = data.user_message;
+                        else throw new Error('No user message suggestion received');
                         break;
                     case 'assistant':
                         if (data.assistant_message) rightAssistantMessage.value = data.assistant_message;
+                        else throw new Error('No assistant message suggestion received');
                         break;
                 }
             } else {
-                handleError(new Error('Failed to get suggestions'));
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `Failed to get suggestions (${response.status})`);
             }
         } catch (error) {
-            handleError(error);
+            // Show more specific error message
+            console.error('Suggestion error:', error);
+            alert(`Suggestion error: ${error.message || 'Unknown error occurred'}`);
         } finally {
             hideLoading(button, originalText);
         }
@@ -582,25 +613,36 @@ document.addEventListener('DOMContentLoaded', function() {
 {% block extra_css %}
 <style>
     .playground-container {
-        min-height: calc(100vh - 120px);
+        min-height: calc(100vh - 80px);
+        width: 100%;
+        padding: 0;
+        margin: 0;
     }
     
     .playground-side {
         padding: 0 10px;
     }
     
+    .version-tag {
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-left: 8px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background-color: rgba(255, 255, 255, 0.8);
+        color: #000;
+        display: inline-block;
+    }
+    
     .response-container {
-        min-height: 250px;
-        max-height: 350px;
+        min-height: 400px;
+        max-height: 70vh;
         overflow-y: auto;
         padding: 15px;
-        border: 1px solid #dee2e6;
         border-radius: 4px;
-        background-color: #f8f9fa;
         font-family: monospace;
         font-size: 0.875rem;
-        white-space: pre-wrap;
-        word-wrap: break-word;
+        width: 100%;
     }
     
     .loading-animation {
@@ -622,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /* Aligned message textareas */
     .message-textarea {
-        height: 160px;
+        height: 100px;
         font-size: 0.8rem;
         line-height: 1.4;
     }
