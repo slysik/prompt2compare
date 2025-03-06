@@ -76,7 +76,7 @@ def suggest_prompt_improvements(system_message="", user_message="", assistant_me
         # Create a formatted prompt that includes all message types
         suggestion_prompt = f"""
         I'm going to provide you with prompt components. Please analyze them and suggest 
-        improvements to make them more effective, clear, and likely to generate better results.
+        SIGNIFICANT improvements to make them more effective, clear, and likely to generate better results.
         
         Current System Message:
         {system_message}
@@ -87,11 +87,14 @@ def suggest_prompt_improvements(system_message="", user_message="", assistant_me
         Current Assistant Message:
         {assistant_message}
         
-        Please suggest specific improvements to these prompts, focusing on:
-        1. Clarity and specificity
-        2. Structure and organization
-        3. Any missing context or instructions
-        4. Tone and language
+        Please suggest substantial and creative improvements to these prompts, focusing on:
+        1. Clarity and specificity - make instructions much clearer and more detailed
+        2. Structure and organization - improve how the information is structured
+        3. Adding any missing context or instructions that would help
+        4. Improving tone and language for better results
+        5. Adding new capabilities or instructions that weren't in the original
+        
+        Your improvements should be substantial - not just minor edits!
         
         Return the improved prompts in this format:
         SYSTEM: [improved system message]
@@ -107,8 +110,8 @@ def suggest_prompt_improvements(system_message="", user_message="", assistant_me
         response = openai.ChatCompletion.create(
             model=model,
             messages=[{"role": "user", "content": suggestion_prompt}],
-            temperature=0.7,
-            max_tokens=1500
+            temperature=0.8,
+            max_tokens=2000
         )
         
         suggestion = response.choices[0].message["content"]

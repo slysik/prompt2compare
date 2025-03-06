@@ -300,12 +300,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Log template data for debugging
                 console.log('Template data received:', templateData);
                 
+                // Try multiple approaches to find the version
+                let versionFound = false;
+                
+                // Method 1: Direct 'version' field
                 if (templateData.version) {
                     leftVersionTag.textContent = `v${templateData.version}`;
                     rightVersionTag.textContent = `v${templateData.version}`;
-                    console.log('Version found:', templateData.version);
-                } else {
-                    // Try to look for version in additional fields
+                    console.log('Version found in version field:', templateData.version);
+                    versionFound = true;
+                } 
+                
+                // Method 2: Look for version in any field name
+                if (!versionFound) {
                     const versionField = Object.keys(templateData).find(key => 
                         key.toLowerCase().includes('version') || key.toLowerCase() === 'v');
                     
@@ -314,10 +321,49 @@ document.addEventListener('DOMContentLoaded', function() {
                         leftVersionTag.textContent = `v${versionValue}`;
                         rightVersionTag.textContent = `v${versionValue}`;
                         console.log('Version found in field:', versionField, versionValue);
+                        versionFound = true;
+                    }
+                }
+                
+                // Method 3: Look for metadata or tags field that might contain version
+                if (!versionFound && templateData.metadata) {
+                    const metadata = templateData.metadata;
+                    if (typeof metadata === 'object' && metadata.version) {
+                        leftVersionTag.textContent = `v${metadata.version}`;
+                        rightVersionTag.textContent = `v${metadata.version}`;
+                        console.log('Version found in metadata:', metadata.version);
+                        versionFound = true;
+                    }
+                }
+                
+                // Method 4: Look for version in name string (e.g., "template-v1.2")
+                if (!versionFound && templateData.name) {
+                    const nameMatch = templateData.name.match(/v(\d+(\.\d+)*)/i);
+                    if (nameMatch) {
+                        leftVersionTag.textContent = `v${nameMatch[1]}`;
+                        rightVersionTag.textContent = `v${nameMatch[1]}`;
+                        console.log('Version found in name:', nameMatch[1]);
+                        versionFound = true;
+                    }
+                }
+                
+                // Method 5: Use last modified date as version if nothing else worked
+                if (!versionFound) {
+                    // Default to timestamp if available
+                    if (templateData.created_at || templateData.updated_at || templateData.timestamp) {
+                        const timeValue = templateData.updated_at || templateData.created_at || templateData.timestamp;
+                        const formattedDate = new Date(timeValue).toISOString().split('T')[0];
+                        leftVersionTag.textContent = formattedDate;
+                        rightVersionTag.textContent = formattedDate;
+                        console.log('Using date as version:', formattedDate);
+                        versionFound = true;
                     } else {
-                        leftVersionTag.textContent = '';
-                        rightVersionTag.textContent = '';
-                        console.log('No version found in template data');
+                        // Last resort - use current date
+                        const today = new Date().toISOString().split('T')[0];
+                        leftVersionTag.textContent = today;
+                        rightVersionTag.textContent = today;
+                        console.log('Using today as version:', today);
+                        versionFound = true;
                     }
                 }
                 
@@ -405,6 +451,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Generate response function
     async function generateResponse(side) {
+        // Always get the CURRENT values from the text areas when generating
+        // This ensures any recent changes from suggestions are included
         const systemMessageElement = document.getElementById(`${side}SystemMessage`);
         const userMessageElement = document.getElementById(`${side}UserMessage`);
         const assistantMessageElement = document.getElementById(`${side}AssistantMessage`);
@@ -413,6 +461,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const maxTokensElement = document.getElementById(`${side}MaxTokens`);
         const responseElement = document.getElementById(`${side}Response`);
         const runButton = document.getElementById(`${side}RunButton`);
+        
+        // Log the messages we're sending to ensure we're using the latest values
+        console.log(`Generating response for ${side} side with current message values:`, {
+            system: systemMessageElement.value,
+            user: userMessageElement.value,
+            assistant: assistantMessageElement.value
+        });
         
         const params = {
             system_message: systemMessageElement.value,
@@ -654,14 +709,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     .version-tag {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         font-weight: bold;
         margin-left: 8px;
-        padding: 2px 8px;
+        padding: 4px 10px;
         border-radius: 4px;
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: #ffeb3b;
         color: #000;
         display: inline-block;
+        border: 1px solid #000;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
     
     .response-container {

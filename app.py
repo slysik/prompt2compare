@@ -122,6 +122,8 @@ def suggest_improvements():
     """Suggest improvements for specific prompt components."""
     try:
         data = request.json
+        logger.info(f"Received suggestion request data: {data}")
+        
         system_message = data.get('system_message', '')
         user_message = data.get('user_message', '')
         assistant_message = data.get('assistant_message', '')
@@ -130,6 +132,15 @@ def suggest_improvements():
         
         logger.info(f"Generating prompt improvement suggestions for {message_type} message")
         
+        # Ensure we have some content to work with
+        if not system_message and message_type != 'system':
+            logger.warning("Empty system message provided, using default")
+            system_message = "You are a helpful AI assistant."
+            
+        if not user_message and message_type != 'user':
+            logger.warning("Empty user message provided, using default")
+            user_message = "Please help me with my task."
+            
         # Create a response object with the original values
         improved = {
             'system_message': system_message,
@@ -146,15 +157,16 @@ def suggest_improvements():
             Current system message:
             {system_message}
             
-            Please suggest an improved version of this system message that is more effective, clear, and specific.
+            Please suggest a significantly improved version of this system message that is more effective, clear, and specific.
+            Your improvements should be substantial and creative, not minor tweaks.
             Return ONLY the improved system message with no additional commentary.
             """
             
             response = openai.ChatCompletion.create(
                 model=model,
                 messages=[{"role": "user", "content": suggestion_prompt}],
-                temperature=0.7,
-                max_tokens=500
+                temperature=0.8,
+                max_tokens=800
             )
             
             improved['system_message'] = response.choices[0].message.content.strip()
@@ -168,15 +180,16 @@ def suggest_improvements():
             Current user message:
             {user_message}
             
-            Please suggest an improved version of this user message that is more clear, specific, and likely to get a better response.
+            Please suggest a significantly improved version of this user message that is more clear, specific, and likely to get a better response.
+            Your improvements should be substantial and creative, not minor tweaks.
             Return ONLY the improved user message with no additional commentary.
             """
             
             response = openai.ChatCompletion.create(
                 model=model,
                 messages=[{"role": "user", "content": suggestion_prompt}],
-                temperature=0.7,
-                max_tokens=500
+                temperature=0.8,
+                max_tokens=800
             )
             
             improved['user_message'] = response.choices[0].message.content.strip()
@@ -191,15 +204,16 @@ def suggest_improvements():
             Current assistant message:
             {assistant_message}
             
-            Please suggest an improved version of this assistant message that better sets up the conversation or provides a better example.
+            Please suggest a significantly improved version of this assistant message that better sets up the conversation or provides a better example.
+            Your improvements should be substantial and creative, not minor tweaks.
             Return ONLY the improved assistant message with no additional commentary.
             """
             
             response = openai.ChatCompletion.create(
                 model=model,
                 messages=[{"role": "user", "content": suggestion_prompt}],
-                temperature=0.7,
-                max_tokens=500
+                temperature=0.8,
+                max_tokens=800
             )
             
             improved['assistant_message'] = response.choices[0].message.content.strip()
