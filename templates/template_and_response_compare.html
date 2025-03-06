@@ -367,18 +367,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load template function
     async function loadTemplate(templateName) {
         try {
+            console.log(`Loading template: ${templateName}`);
             const response = await fetch(`/template/${templateName}`);
             if (response.ok) {
                 const templateData = await response.json();
                 
-                // Set message values
-                leftSystemMessage.value = templateData.system_message || '';
-                leftUserMessage.value = templateData.user_message || '';
-                leftAssistantMessage.value = templateData.assistant_message || '';
+                // Log the complete template data for debugging
+                console.log('Complete template data:', JSON.stringify(templateData, null, 2));
                 
-                rightSystemMessage.value = templateData.system_message || '';
-                rightUserMessage.value = templateData.user_message || '';
-                rightAssistantMessage.value = templateData.assistant_message || '';
+                // Ensure we have message values - this is critical for empty prompts
+                const systemMsg = templateData.system_message || '';
+                const userMsg = templateData.user_message || '';
+                const assistantMsg = templateData.assistant_message || '';
+                
+                console.log(`System message length: ${systemMsg.length}`);
+                console.log(`User message length: ${userMsg.length}`);
+                
+                // Set message values - ensure we're using the data properly
+                leftSystemMessage.value = systemMsg;
+                leftUserMessage.value = userMsg;
+                leftAssistantMessage.value = assistantMsg;
+                
+                rightSystemMessage.value = systemMsg;
+                rightUserMessage.value = userMsg;
+                rightAssistantMessage.value = assistantMsg;
                 
                 // Update version tags if version information is available
                 const leftVersionTag = document.getElementById('leftVersionInfo');
