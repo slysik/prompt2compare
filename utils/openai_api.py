@@ -5,13 +5,13 @@ from config import OPENAI_API_KEY
 # Set API key
 openai.api_key = OPENAI_API_KEY
 
-def generate_completion(user_message="", system_message="You are a helpful AI assistant.", assistant_message="", model="gpt-3.5-turbo", temperature=0.7, max_tokens=500, **kwargs):
+def generate_completion(user_message="", system_message="You are a helpful AI assistant.", assistant_message="", model="gpt-4o", temperature=0.7, max_tokens=500, **kwargs):
     """
     Generate a completion using OpenAI API with separated message fields.
     """
     try:
-        if not model:
-            model = "gpt-3.5-turbo"  # Default model if none provided
+        # Always use gpt-4o as the model
+        model = "gpt-4o"  # Force the model to be gpt-4o
             
         messages = []
         

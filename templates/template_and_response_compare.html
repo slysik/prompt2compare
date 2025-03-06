@@ -602,6 +602,10 @@ document.addEventListener('DOMContentLoaded', function() {
             presence_penalty: parseFloat(document.getElementById(`${side}PresencePenalty`).value)
         };
         
+        // Remove version and id fields if they were added to the parameters
+        delete params.version;
+        delete params.id;
+        
         // Add additional parameters
         const additionalParamInputs = document.querySelectorAll(`#${side}AdditionalParams .additional-param`);
         additionalParamInputs.forEach(input => {

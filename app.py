@@ -78,26 +78,47 @@ def generate_response():
     """Generate a single response for a template."""
     try:
         data = request.json
+        logger.info(f"Received generation request data: {data}")
+        
+        # Extract required fields
         system_message = data.get('system_message', '')
         user_message = data.get('user_message', '')
         assistant_message = data.get('assistant_message', '')
-        model = data.get('model', 'gpt-3.5-turbo')
-        temperature = float(data.get('temperature', 0.7))
-        max_tokens = int(data.get('max_tokens', 500))
         
-        # Get additional parameters
-        params = {}
+        # Force model to gpt-4o as requested
+        model = "gpt-4o"
+        
+        # Get numeric parameters with proper type conversion and validation
+        try:
+            temperature = float(data.get('temperature', 0.7))
+            max_tokens = int(data.get('max_tokens', 500))
+            
+            # Get additional numeric parameters if they exist
+            top_p = float(data.get('top_p', 1.0)) if 'top_p' in data else 1.0
+            frequency_penalty = float(data.get('frequency_penalty', 0.0)) if 'frequency_penalty' in data else 0.0
+            presence_penalty = float(data.get('presence_penalty', 0.0)) if 'presence_penalty' in data else 0.0
+            
+            logger.info(f"Params - Temp: {temperature}, Max Tokens: {max_tokens}, Top P: {top_p}, " +
+                      f"Freq Penalty: {frequency_penalty}, Presence Penalty: {presence_penalty}")
+        except (ValueError, TypeError) as e:
+            logger.error(f"Parameter conversion error: {str(e)}")
+            return jsonify({'error': f"Parameter error: {str(e)}"}), 400
+        
+        # Add these parameters directly to a clean params dictionary
+        params = {
+            'top_p': top_p,
+            'frequency_penalty': frequency_penalty,
+            'presence_penalty': presence_penalty
+        }
+        
+        # Add any other parameters that aren't already handled
         for key, value in data.items():
-            if key not in ['system_message', 'user_message', 'assistant_message', 'model', 'temperature', 'max_tokens']:
-                # Make sure numeric values are properly typed
-                if key in ['top_p', 'frequency_penalty', 'presence_penalty'] and value is not None:
-                    try:
-                        params[key] = float(value)
-                    except (ValueError, TypeError):
-                        # Skip problematic values
-                        continue
-                else:
-                    params[key] = value
+            if key not in ['system_message', 'user_message', 'assistant_message', 'model', 'temperature', 'max_tokens', 
+                          'version', 'id', 'top_p', 'frequency_penalty', 'presence_penalty']:
+                params[key] = value
+        
+        # Log the parameters we're using
+        logger.info(f"Final generation parameters: {params}")
         
         # Generate response
         response = generate_completion(
