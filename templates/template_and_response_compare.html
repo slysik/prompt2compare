@@ -475,13 +475,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalText = showLoading(button, 'Suggesting...');
         
         try {
-            // Validate that we have the required data
+            // Setup default fallback values if fields are empty
             if (!rightSystemMessage.value && messageType !== 'system') {
-                throw new Error('System message is required');
+                rightSystemMessage.value = "You are a helpful AI assistant.";
+                console.log("Added default system message");
             }
             
             if (!rightUserMessage.value && messageType !== 'user') {
-                throw new Error('User message is required');
+                rightUserMessage.value = "Please help me with my task.";
+                console.log("Added default user message");
             }
             
             // Create a request with all messages but focus on the specific one
@@ -530,12 +532,19 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             // Show more specific error message
             console.error('Suggestion error:', error);
-            alert(`Suggestion error: ${error.message || 'Unknown error occurred'}`);
             
-            // Add debug output for API version issues
-            if (!templateData || !templateData.version) {
-                console.warn('No version info found in template data:', templateData);
+            // Log the actual request data for debugging
+            console.log('Request data that caused error:', requestData);
+            
+            // Add proper error message with more details
+            let errorMessage = 'Suggestion error: ';
+            if (error.message) {
+                errorMessage += error.message;
+            } else {
+                errorMessage += 'Unknown error occurred';
             }
+            
+            alert(errorMessage);
         } finally {
             hideLoading(button, originalText);
         }

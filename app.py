@@ -215,18 +215,37 @@ def suggest_improvements():
             
             try:
                 # Try to parse the suggestion into the different message types
+                system_found = False
+                user_found = False
+                assistant_found = False
+                
                 for line in suggestion.split('\n'):
                     line = line.strip()
                     if line.startswith('SYSTEM:'):
                         improved['system_message'] = line[7:].strip()
+                        system_found = True
                     elif line.startswith('USER:'):
                         improved['user_message'] = line[5:].strip()
+                        user_found = True
                     elif line.startswith('ASSISTANT:'):
                         improved['assistant_message'] = line[10:].strip()
+                        assistant_found = True
+                
+                # Ensure all messages are present
+                if not (system_found and user_found and assistant_found):
+                    logger.warning("Missing some message types in response, using defaults where needed")
+                    if not system_found:
+                        improved['system_message'] = system_message or "You are a helpful assistant."
+                    if not user_found:
+                        improved['user_message'] = user_message or "Please help me with my task."
+                    if not assistant_found:
+                        improved['assistant_message'] = assistant_message or "I'll help you with your task."
             except Exception as parse_error:
                 logger.error(f"Error parsing suggestions: {str(parse_error)}")
-                # If parsing fails, just return the raw suggestion in the user message
-                improved['user_message'] = suggestion
+                # If parsing fails, use the original messages
+                improved['system_message'] = system_message or "You are a helpful assistant."
+                improved['user_message'] = user_message or "Please help me with my task."
+                improved['assistant_message'] = assistant_message or "I'll help you with your task."
         
         return jsonify(improved)
     except Exception as e:

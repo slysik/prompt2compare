@@ -64,6 +64,15 @@ def suggest_prompt_improvements(system_message="", user_message="", assistant_me
         if not model:
             model = "gpt-3.5-turbo"  # Default model if none provided
             
+        # Validate inputs to prevent blank requests
+        if not any([system_message, user_message, assistant_message]):
+            logging.error("No message content provided for suggestions")
+            return """
+            SYSTEM: You are a helpful AI assistant that provides clear and concise responses.
+            USER: Please help me with my task.
+            ASSISTANT: I'd be happy to help you with your task. What specific information or assistance do you need?
+            """
+            
         # Create a formatted prompt that includes all message types
         suggestion_prompt = f"""
         I'm going to provide you with prompt components. Please analyze them and suggest 
@@ -93,6 +102,7 @@ def suggest_prompt_improvements(system_message="", user_message="", assistant_me
         """
         
         logging.info(f"Generating prompt improvement suggestions with model: {model}")
+        logging.info(f"System msg length: {len(system_message)}, User msg length: {len(user_message)}, Assistant msg length: {len(assistant_message)}")
         
         response = openai.ChatCompletion.create(
             model=model,
@@ -103,7 +113,19 @@ def suggest_prompt_improvements(system_message="", user_message="", assistant_me
         
         suggestion = response.choices[0].message["content"]
         
+        # Validate output format
+        if not ("SYSTEM:" in suggestion and "USER:" in suggestion and "ASSISTANT:" in suggestion):
+            logging.warning("Suggestion response does not contain proper format. Reformatting...")
+            # Add proper formatting if missing
+            lines = suggestion.strip().split('\n')
+            formatted_suggestion = f"SYSTEM: {system_message or lines[0]}\nUSER: {user_message or lines[min(1, len(lines)-1)]}\nASSISTANT: {assistant_message or lines[min(2, len(lines)-1)]}"
+            return formatted_suggestion
+        
         return suggestion
     except Exception as e:
         logging.error(f"Error suggesting improvements: {str(e)}")
-        return f"Error generating suggestions: {str(e)}"
+        return f"""
+        SYSTEM: {system_message}
+        USER: {user_message}
+        ASSISTANT: {assistant_message}
+        """
