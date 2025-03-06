@@ -159,6 +159,30 @@
                         <small>Creative</small>
                     </div>
                 </div>
+                <div class="mb-3">
+                    <label for="leftTopP" class="form-label">Top P: <span id="leftTopPValue">1.0</span></label>
+                    <input type="range" id="leftTopP" class="form-range" min="0" max="1" step="0.05" value="1.0" disabled>
+                    <div class="d-flex justify-content-between">
+                        <small>Focused</small>
+                        <small>Diverse</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="leftFrequencyPenalty" class="form-label">Frequency Penalty: <span id="leftFrequencyPenaltyValue">0</span></label>
+                    <input type="range" id="leftFrequencyPenalty" class="form-range" min="0" max="2" step="0.1" value="0" disabled>
+                    <div class="d-flex justify-content-between">
+                        <small>Repetitive</small>
+                        <small>Diverse</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="leftPresencePenalty" class="form-label">Presence Penalty: <span id="leftPresencePenaltyValue">0</span></label>
+                    <input type="range" id="leftPresencePenalty" class="form-range" min="0" max="2" step="0.1" value="0" disabled>
+                    <div class="d-flex justify-content-between">
+                        <small>Focused</small>
+                        <small>Exploratory</small>
+                    </div>
+                </div>
                 <div id="leftAdditionalParams">
                     <!-- Additional parameters will be added here -->
                 </div>
@@ -201,6 +225,30 @@
                         <small>Creative</small>
                     </div>
                 </div>
+                <div class="mb-3">
+                    <label for="rightTopP" class="form-label">Top P: <span id="rightTopPValue">1.0</span></label>
+                    <input type="range" id="rightTopP" class="form-range" min="0" max="1" step="0.05" value="1.0">
+                    <div class="d-flex justify-content-between">
+                        <small>Focused</small>
+                        <small>Diverse</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="rightFrequencyPenalty" class="form-label">Frequency Penalty: <span id="rightFrequencyPenaltyValue">0</span></label>
+                    <input type="range" id="rightFrequencyPenalty" class="form-range" min="0" max="2" step="0.1" value="0">
+                    <div class="d-flex justify-content-between">
+                        <small>Repetitive</small>
+                        <small>Diverse</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="rightPresencePenalty" class="form-label">Presence Penalty: <span id="rightPresencePenaltyValue">0</span></label>
+                    <input type="range" id="rightPresencePenalty" class="form-range" min="0" max="2" step="0.1" value="0">
+                    <div class="d-flex justify-content-between">
+                        <small>Focused</small>
+                        <small>Exploratory</small>
+                    </div>
+                </div>
                 <div id="rightAdditionalParams">
                     <!-- Additional parameters will be added here -->
                 </div>
@@ -238,6 +286,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const leftTemperature = document.getElementById('leftTemperature');
     const leftTempValue = document.getElementById('leftTempValue');
     const leftMaxTokens = document.getElementById('leftMaxTokens');
+    const leftTopP = document.getElementById('leftTopP');
+    const leftTopPValue = document.getElementById('leftTopPValue');
+    const leftFrequencyPenalty = document.getElementById('leftFrequencyPenalty');
+    const leftFrequencyPenaltyValue = document.getElementById('leftFrequencyPenaltyValue');
+    const leftPresencePenalty = document.getElementById('leftPresencePenalty');
+    const leftPresencePenaltyValue = document.getElementById('leftPresencePenaltyValue');
     const leftAdditionalParams = document.getElementById('leftAdditionalParams');
     
     // Right side elements
@@ -250,6 +304,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const rightTemperature = document.getElementById('rightTemperature');
     const rightTempValue = document.getElementById('rightTempValue');
     const rightMaxTokens = document.getElementById('rightMaxTokens');
+    const rightTopP = document.getElementById('rightTopP');
+    const rightTopPValue = document.getElementById('rightTopPValue');
+    const rightFrequencyPenalty = document.getElementById('rightFrequencyPenalty');
+    const rightFrequencyPenaltyValue = document.getElementById('rightFrequencyPenaltyValue');
+    const rightPresencePenalty = document.getElementById('rightPresencePenalty');
+    const rightPresencePenaltyValue = document.getElementById('rightPresencePenaltyValue');
     const rightAdditionalParams = document.getElementById('rightAdditionalParams');
     
     // Temperature slider events
@@ -259,6 +319,33 @@ document.addEventListener('DOMContentLoaded', function() {
     
     rightTemperature.addEventListener('input', function() {
         rightTempValue.textContent = this.value;
+    });
+    
+    // Top P slider events
+    leftTopP.addEventListener('input', function() {
+        leftTopPValue.textContent = this.value;
+    });
+    
+    rightTopP.addEventListener('input', function() {
+        rightTopPValue.textContent = this.value;
+    });
+    
+    // Frequency Penalty slider events
+    leftFrequencyPenalty.addEventListener('input', function() {
+        leftFrequencyPenaltyValue.textContent = this.value;
+    });
+    
+    rightFrequencyPenalty.addEventListener('input', function() {
+        rightFrequencyPenaltyValue.textContent = this.value;
+    });
+    
+    // Presence Penalty slider events
+    leftPresencePenalty.addEventListener('input', function() {
+        leftPresencePenaltyValue.textContent = this.value;
+    });
+    
+    rightPresencePenalty.addEventListener('input', function() {
+        rightPresencePenaltyValue.textContent = this.value;
     });
     
     // Check for template in URL
@@ -378,9 +465,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     rightAssistantMessage.value = "";
                 }
                 
-                // Set model values
-                leftModel.value = templateData.model || 'gpt-3.5-turbo';
-                rightModel.value = templateData.model || 'gpt-3.5-turbo';
+                // Always set model value to gpt-4o
+                leftModel.value = "gpt-4o";
+                rightModel.value = "gpt-4o";
                 
                 // Set temperature values
                 const tempValue = templateData.temperature || 0.7;
@@ -393,6 +480,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 const maxTokensValue = templateData.max_tokens || 500;
                 leftMaxTokens.value = maxTokensValue;
                 rightMaxTokens.value = maxTokensValue;
+                
+                // Set Top P values
+                const topPValue = templateData.top_p || 1.0;
+                leftTopP.value = topPValue;
+                leftTopPValue.textContent = topPValue;
+                rightTopP.value = topPValue;
+                rightTopPValue.textContent = topPValue;
+                
+                // Set Frequency Penalty values
+                const freqPenaltyValue = templateData.frequency_penalty || 0;
+                leftFrequencyPenalty.value = freqPenaltyValue;
+                leftFrequencyPenaltyValue.textContent = freqPenaltyValue;
+                rightFrequencyPenalty.value = freqPenaltyValue;
+                rightFrequencyPenaltyValue.textContent = freqPenaltyValue;
+                
+                // Set Presence Penalty values
+                const presPenaltyValue = templateData.presence_penalty || 0;
+                leftPresencePenalty.value = presPenaltyValue;
+                leftPresencePenaltyValue.textContent = presPenaltyValue;
+                rightPresencePenalty.value = presPenaltyValue;
+                rightPresencePenaltyValue.textContent = presPenaltyValue;
                 
                 // Clear additional params
                 leftAdditionalParams.innerHTML = '';
@@ -469,13 +577,17 @@ document.addEventListener('DOMContentLoaded', function() {
             assistant: assistantMessageElement.value
         });
         
+        // Always set model to gpt-4o as required
         const params = {
             system_message: systemMessageElement.value,
             user_message: userMessageElement.value,
             assistant_message: assistantMessageElement.value,
-            model: modelElement.value,
+            model: "gpt-4o", // Always use gpt-4o regardless of dropdown value
             temperature: parseFloat(temperatureElement.value),
-            max_tokens: parseInt(maxTokensElement.value)
+            max_tokens: parseInt(maxTokensElement.value),
+            top_p: parseFloat(document.getElementById(`${side}TopP`).value),
+            frequency_penalty: parseFloat(document.getElementById(`${side}FrequencyPenalty`).value),
+            presence_penalty: parseFloat(document.getElementById(`${side}PresencePenalty`).value)
         };
         
         // Add additional parameters

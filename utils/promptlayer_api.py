@@ -109,7 +109,19 @@ def get_template_details(template_name):
         dict: Template details including parameters
     """
     try:
-        # Get all templates first since we need to find by name
+        # Check if the template_name indicates a specific ID (e.g., "Top 10 Jobs id 43936")
+        template_id = None
+        version = None
+        
+        # Parse ID from name if available
+        id_match = None
+        if " id " in template_name:
+            id_match = template_name.split(" id ")
+            if len(id_match) > 1 and id_match[1].strip().isdigit():
+                template_id = int(id_match[1].strip())
+                logger.info(f"Extracted template ID: {template_id} from name: {template_name}")
+        
+        # Get all templates first since we need to find by name or ID
         url = f"{BASE_URL}/prompt-templates"
         response = requests.get(url, headers=get_headers())
         
@@ -121,11 +133,21 @@ def get_template_details(template_name):
             
             # Check if we have items in the response
             if "items" in data:
-                # Find the template with matching name
+                # Find the template with matching name or ID
                 matching_template = None
                 for template in data["items"]:
-                    if template.get("prompt_name") == template_name:
+                    # If we have an ID, match by ID
+                    if template_id and template.get("id") == template_id:
                         matching_template = template
+                        # Get the latest version
+                        version = template.get("version", 1)
+                        logger.info(f"Found template by ID {template_id}, version: {version}")
+                        break
+                    # Otherwise match by name
+                    elif template.get("prompt_name") == template_name:
+                        matching_template = template
+                        version = template.get("version", 1)
+                        logger.info(f"Found template by name: {template_name}, version: {version}")
                         break
                 
                 if matching_template:
@@ -186,6 +208,9 @@ def get_template_details(template_name):
                             elif role == "assistant":
                                 assistant_message = content_text
                     
+                    # Ensure model is always gpt-4o as requested
+                    model = "gpt-4o"
+                    
                     # Create the final template object
                     template_details = {
                         "system_message": system_message,
@@ -196,7 +221,9 @@ def get_template_details(template_name):
                         "max_tokens": int(max_tokens),
                         "top_p": float(top_p),
                         "frequency_penalty": float(frequency_penalty),
-                        "presence_penalty": float(presence_penalty)
+                        "presence_penalty": float(presence_penalty),
+                        "version": version,
+                        "id": matching_template.get("id", "unknown")
                     }
                     
                     logger.info(f"Extracted template details successfully")
@@ -209,12 +236,14 @@ def get_template_details(template_name):
             "system_message": "You are a helpful AI assistant.",
             "user_message": "Please provide information about this topic.",
             "assistant_message": "",
-            "model": "gpt-3.5-turbo",
+            "model": "gpt-4o",
             "temperature": 0.7,
             "max_tokens": 500,
             "top_p": 1.0,
             "frequency_penalty": 0.0,
-            "presence_penalty": 0.0
+            "presence_penalty": 0.0,
+            "version": 1,
+            "id": "unknown"
         }
         
     except Exception as e:
@@ -223,10 +252,12 @@ def get_template_details(template_name):
             "system_message": "You are a helpful AI assistant.",
             "user_message": "Please provide information about this topic.",
             "assistant_message": "",
-            "model": "gpt-3.5-turbo",
+            "model": "gpt-4o",
             "temperature": 0.7,
             "max_tokens": 500,
             "top_p": 1.0,
             "frequency_penalty": 0.0,
-            "presence_penalty": 0.0
+            "presence_penalty": 0.0,
+            "version": 1,
+            "id": "unknown"
         }
