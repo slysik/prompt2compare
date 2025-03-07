@@ -73,7 +73,7 @@ def call_jija_comp_gpt(message, temperature=0.7, max_tokens=1000):
         
         # Create a formatted prompt that includes all message types
         response = openai.ChatCompletion.create(
-            model=JIJA_COMP_GPT_ID,
+            model=JIJA_COMP_GPT_ID,  # Use the specific JiJa-comp GPT ID
             messages=[{"role": "user", "content": message}],
             temperature=temperature,
             max_tokens=max_tokens

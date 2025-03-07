@@ -22,17 +22,15 @@
             <div class="col-md-6 playground-side">
                 <div class="card border-primary mb-3">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">ChatGPT</h5>
+                        <h5 class="card-title mb-0">JiJa-comp GPT</h5>
                         <div class="actions">
-                            <button id="runJijaGptButton" class="btn btn-sm btn-light me-2">Run JiJa GPT</button>
-                            <button id="leftUploadButton" class="btn btn-sm btn-light">Upload</button>
-                            <button id="leftRenderButton" class="btn btn-sm btn-light ms-2">Render</button>
+                            <button id="runJijaGptButton" class="btn btn-sm btn-light">Run</button>
                             <input type="file" id="leftFileInput" class="d-none" accept=".md">
                         </div>
                     </div>
                     <div class="card-body">
                         <div class="mb-2">
-                            <textarea id="leftMarkdownInput" class="form-control small-textarea" rows="4" placeholder="Enter your question or paste markdown here..."></textarea>
+                            <textarea id="leftMarkdownInput" class="form-control small-textarea" rows="4" placeholder="Enter your question for JiJa-comp GPT..."></textarea>
                         </div>
                         <div id="leftContent" class="markdown-container"></div>
                     </div>
@@ -65,8 +63,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Elements
-    const leftUploadButton = document.getElementById('leftUploadButton');
-    const leftRenderButton = document.getElementById('leftRenderButton');
+    const runJijaGptButton = document.getElementById('runJijaGptButton');
     const rightUploadButton = document.getElementById('rightUploadButton');
     const leftFileInput = document.getElementById('leftFileInput');
     const rightFileInput = document.getElementById('rightFileInput');
@@ -79,19 +76,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let leftMarkdown = '';
     let rightMarkdown = '';
     
-    // Upload handlers
-    leftUploadButton.addEventListener('click', function() {
-        leftFileInput.click();
-    });
-    
     rightUploadButton.addEventListener('click', function() {
         rightFileInput.click();
-    });
-    
-    // Render pasted markdown
-    leftRenderButton.addEventListener('click', function() {
-        leftMarkdown = leftMarkdownInput.value;
-        renderMarkdown(leftContent, leftMarkdown);
     });
     
     // Auto-render when typing (with debounce)
@@ -105,12 +91,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Add JiJa Comp GPT button handler
-    const runJijaGptButton = document.getElementById('runJijaGptButton');
-    
     runJijaGptButton.addEventListener('click', async function() {
         const prompt = leftMarkdownInput.value.trim();
         if (!prompt) {
-            alert('Please enter a question or prompt');
+            alert('Please enter a question for JiJa-comp GPT');
             return;
         }
         
@@ -118,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalButtonText = runJijaGptButton.textContent;
         runJijaGptButton.textContent = 'Running...';
         runJijaGptButton.disabled = true;
-        leftContent.innerHTML = '<div class="loading-animation"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Calling JiJa Comp GPT...</p></div>';
+        leftContent.innerHTML = '<div class="loading-animation"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Calling JiJa-comp GPT...</p></div>';
         
         try {
             const response = await fetch('/call_jija_comp', {
@@ -139,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderMarkdown(leftContent, leftMarkdown);
             } else {
                 const errorData = await response.json();
-                leftContent.innerHTML = `<div class="alert alert-danger">Error: ${errorData.error || 'Could not call JiJa Comp GPT'}</div>`;
+                leftContent.innerHTML = `<div class="alert alert-danger">Error: ${errorData.error || 'Could not call JiJa-comp GPT'}</div>`;
             }
         } catch (error) {
             leftContent.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
@@ -149,19 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // File input handlers
-    leftFileInput.addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                leftMarkdown = e.target.result;
-                leftMarkdownInput.value = leftMarkdown; // Update textarea with file content
-                renderMarkdown(leftContent, leftMarkdown);
-            };
-            reader.readAsText(file);
-        }
-    });
+    // No need for left file input handler since we're using the GPT directly
     
     rightFileInput.addEventListener('change', function(event) {
         const file = event.target.files[0];
