@@ -24,6 +24,7 @@
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">ChatGPT</h5>
                         <div class="actions">
+                            <button id="runJijaGptButton" class="btn btn-sm btn-light me-2">Run JiJa GPT</button>
                             <button id="leftUploadButton" class="btn btn-sm btn-light">Upload</button>
                             <button id="leftRenderButton" class="btn btn-sm btn-light ms-2">Render</button>
                             <input type="file" id="leftFileInput" class="d-none" accept=".md">
@@ -31,7 +32,7 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-2">
-                            <textarea id="leftMarkdownInput" class="form-control small-textarea" rows="4" placeholder="Paste markdown here..."></textarea>
+                            <textarea id="leftMarkdownInput" class="form-control small-textarea" rows="4" placeholder="Enter your question or paste markdown here..."></textarea>
                         </div>
                         <div id="leftContent" class="markdown-container"></div>
                     </div>
@@ -101,6 +102,51 @@ document.addEventListener('DOMContentLoaded', function() {
             leftMarkdown = leftMarkdownInput.value;
             renderMarkdown(leftContent, leftMarkdown);
         }, 500); // Wait 500ms after typing stops
+    });
+    
+    // Add JiJa Comp GPT button handler
+    const runJijaGptButton = document.getElementById('runJijaGptButton');
+    
+    runJijaGptButton.addEventListener('click', async function() {
+        const prompt = leftMarkdownInput.value.trim();
+        if (!prompt) {
+            alert('Please enter a question or prompt');
+            return;
+        }
+        
+        // Show loading state
+        const originalButtonText = runJijaGptButton.textContent;
+        runJijaGptButton.textContent = 'Running...';
+        runJijaGptButton.disabled = true;
+        leftContent.innerHTML = '<div class="loading-animation"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Calling JiJa Comp GPT...</p></div>';
+        
+        try {
+            const response = await fetch('/call_jija_comp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    temperature: 0.7,
+                    max_tokens: 1500
+                }),
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                leftMarkdown = data.response;
+                renderMarkdown(leftContent, leftMarkdown);
+            } else {
+                const errorData = await response.json();
+                leftContent.innerHTML = `<div class="alert alert-danger">Error: ${errorData.error || 'Could not call JiJa Comp GPT'}</div>`;
+            }
+        } catch (error) {
+            leftContent.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        } finally {
+            runJijaGptButton.textContent = originalButtonText;
+            runJijaGptButton.disabled = false;
+        }
     });
     
     // File input handlers
@@ -380,6 +426,20 @@ document.addEventListener('DOMContentLoaded', function() {
         width: 100%;
         height: 2px;
         background-color: rgba(255,255,255,0.3);
+    }
+    
+    .loading-animation {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+        color: #4a5568;
+    }
+    
+    .loading-animation p {
+        margin-top: 16px;
+        font-size: 14px;
     }
 </style>
 {% endblock %}

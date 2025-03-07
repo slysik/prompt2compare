@@ -8,7 +8,7 @@ from pathlib import Path
 
 # Import utils
 from utils.promptlayer_api import get_all_templates, get_template_details, check_api_connection
-from utils.openai_api import generate_completion, suggest_prompt_improvements
+from utils.openai_api import generate_completion, suggest_prompt_improvements, call_jija_comp_gpt
 from config import OPENAI_API_KEY
 
 # Set the OpenAI API key globally for direct usage in routes
@@ -464,6 +464,33 @@ def export_markdown_comparison():
         })
     except Exception as e:
         logger.error(f"Error exporting markdown comparison: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/call_jija_comp', methods=['POST'])
+def call_jija_comp():
+    """Call the JiJa Comp GPT with the provided prompt."""
+    try:
+        data = request.json
+        prompt = data.get('prompt', '')
+        temperature = float(data.get('temperature', 0.7))
+        max_tokens = int(data.get('max_tokens', 1000))
+        
+        if not prompt:
+            return jsonify({'error': 'Prompt cannot be empty'}), 400
+        
+        # Call the JiJa Comp GPT
+        logger.info(f"Calling JiJa Comp GPT with prompt: {prompt[:100]}...")
+        response = call_jija_comp_gpt(
+            message=prompt,
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        
+        return jsonify({
+            'response': response
+        })
+    except Exception as e:
+        logger.error(f"Error calling JiJa Comp GPT: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/download_comparison/<filename>')

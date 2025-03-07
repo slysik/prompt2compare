@@ -5,6 +5,9 @@ from config import OPENAI_API_KEY
 # Set API key
 openai.api_key = OPENAI_API_KEY
 
+# JiJa Comp GPT ID
+JIJA_COMP_GPT_ID = "g-67cb4c89de148191abd61969a8073ee0"
+
 def generate_completion(user_message="", system_message="You are a helpful AI assistant.", assistant_message="", model="gpt-4o", temperature=0.7, max_tokens=500, **kwargs):
     """
     Generate a completion using OpenAI API with separated message fields.
@@ -34,6 +37,11 @@ def generate_completion(user_message="", system_message="You are a helpful AI as
         # Remove problematic parameters that might cause issues
         clean_kwargs = {}
         for k, v in kwargs.items():
+            # Skip provider and Frequency Penalty parameters - they're not supported by OpenAI API
+            if k in ['provider', 'Frequency Penalty']:
+                continue
+                
+            # Handle known parameters with proper types
             if k in ['top_p', 'frequency_penalty', 'presence_penalty']:
                 if not isinstance(v, str) and v is not None:
                     clean_kwargs[k] = float(v)
@@ -55,6 +63,26 @@ def generate_completion(user_message="", system_message="You are a helpful AI as
     except Exception as e:
         logging.error(f"Error generating completion: {str(e)}")
         return f"Error generating response: {str(e)}"
+
+def call_jija_comp_gpt(message, temperature=0.7, max_tokens=1000):
+    """
+    Calls the JiJa Comp GPT with the given message.
+    """
+    try:
+        logging.info(f"Calling JiJa Comp GPT with message: {message[:100]}...")
+        
+        # Create a formatted prompt that includes all message types
+        response = openai.ChatCompletion.create(
+            model=JIJA_COMP_GPT_ID,
+            messages=[{"role": "user", "content": message}],
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        
+        return response.choices[0].message["content"]
+    except Exception as e:
+        logging.error(f"Error calling JiJa Comp GPT: {str(e)}")
+        return f"Error calling JiJa Comp GPT: {str(e)}"
 
 def suggest_prompt_improvements(system_message="", user_message="", assistant_message="", model="gpt-3.5-turbo"):
     """
