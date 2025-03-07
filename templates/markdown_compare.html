@@ -163,9 +163,9 @@ document.addEventListener('DOMContentLoaded', function() {
             reader.onload = function(e) {
                 const fileContent = e.target.result;
                 
-                // Show the response header for JiJa
-                const rightResponseHeader = document.getElementById('rightResponseHeader');
-                rightResponseHeader.style.display = 'block';
+                // We don't need this anymore
+                // const rightResponseHeader = document.getElementById('rightResponseHeader');
+                // if (rightResponseHeader) rightResponseHeader.style.display = 'block';
                 
                 // Check if it's a CSV file
                 if (file.name.toLowerCase().endsWith('.csv')) {
@@ -173,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const parsedData = parseCSV(fileContent);
                     const formattedContent = formatCSVValues(parsedData);
                     rightMarkdown = formattedContent;
+                    console.log("CSV parsed and formatted:", rightMarkdown);
                 } else {
                     // Regular markdown file
                     rightMarkdown = fileContent;
@@ -345,28 +346,32 @@ document.addEventListener('DOMContentLoaded', function() {
             const senderText = sender;
             
             // Display the sender in the dedicated User Prompt area instead of in the markdown
-            setTimeout(() => {
+            // Use requestAnimationFrame to ensure this runs after the current JS execution
+            requestAnimationFrame(() => {
                 const rightPromptHeader = document.getElementById('rightPromptHeader');
-                rightPromptHeader.style.display = 'block';
+                if (rightPromptHeader) rightPromptHeader.style.display = 'block';
                 
                 const userPromptContent = document.getElementById('userPromptContent');
-                userPromptContent.innerHTML = `<div class="p-2 border rounded bg-light">${senderText}</div>`;
-                userPromptContent.style.display = 'block';
-            }, 0);
-            
-            senderGroups[sender].forEach((message, index) => {
-                // Put the complete message content directly without any additional formatting
-                // Use a div to enable controlling formatting with CSS
-                formattedContent += `<div class="csv-content">${message}</div>\n\n`;
-                
-                // Add separator between messages but not after the last one
-                if (index < senderGroups[sender].length - 1) {
-                    formattedContent += `<hr class="my-4">\n\n`;
+                if (userPromptContent) {
+                    userPromptContent.innerHTML = `<div class="p-2 border rounded bg-light">${senderText}</div>`;
+                    userPromptContent.style.display = 'block';
                 }
             });
             
-            // Add extra space between sender sections
-            formattedContent += '\n\n';
+            // Create a raw HTML container for the content to ensure proper rendering
+            formattedContent += `<div class="csv-content-container">`;
+            
+            senderGroups[sender].forEach((message, index) => {
+                // Wrap the message in a div to ensure it's treated as HTML
+                formattedContent += `<div class="csv-content">${message}</div>`;
+                
+                // Add separator between messages but not after the last one
+                if (index < senderGroups[sender].length - 1) {
+                    formattedContent += `<hr class="my-3">`;
+                }
+            });
+            
+            formattedContent += `</div>`;
         });
         
         return formattedContent;
@@ -374,7 +379,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Render markdown
     function renderMarkdown(container, markdown) {
-        container.innerHTML = marked.parse(markdown);
+        // Check if the content is regular markdown or our HTML-formatted CSV content
+        if (markdown.includes('<div class="csv-content-container">')) {
+            // Just insert the HTML directly
+            container.innerHTML = markdown;
+        } else {
+            // Parse as markdown
+            container.innerHTML = marked.parse(markdown);
+        }
     }
     
     // Export comparison
