@@ -331,8 +331,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Format each sender's messages
         Object.keys(senderGroups).forEach(sender => {
-            // No need to include the "User Response" text from the CSV
-            // Just show the content directly
+            // Add sender as "User Prompt:" in bold
+            formattedContent += `<div class="user-prompt-box mb-2">`;
+            formattedContent += `<strong>User Prompt:</strong>`;
+            formattedContent += `<div class="p-2 border rounded bg-light">${sender}</div>`;
+            formattedContent += `</div>\n\n`;
             
             senderGroups[sender].forEach((message, index) => {
                 // Put the complete message content directly without any additional formatting
@@ -431,6 +434,10 @@ document.addEventListener('DOMContentLoaded', function() {
         font-size: 14px;
         color: #333;
         margin-bottom: 5px;
+    }
+    
+    .user-prompt-box {
+        margin-bottom: 10px;
     }
     
     .small-textarea {
