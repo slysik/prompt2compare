@@ -8,7 +8,7 @@
     <div class="playground-header mb-1">
         <div class="row align-items-center">
             <div class="col-md-6">
-                <h4>ChatGPT versus JiJa</h4>
+                <!-- Removed heading to make more room -->
             </div>
             <div class="col-md-6 d-flex justify-content-end">
                 <button id="exportButton" class="btn btn-sm btn-secondary">Export</button>
@@ -30,7 +30,11 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-2">
-                            <textarea id="leftMarkdownInput" class="form-control small-textarea" rows="4" placeholder="Enter your question for ChatGPT..."></textarea>
+                            <textarea id="leftMarkdownInput" class="form-control small-textarea" rows="3" placeholder="Enter your question for ChatGPT..."></textarea>
+                        </div>
+                        <div class="user-query-box mb-2" id="userQueryDisplay" style="display: none;">
+                            <strong>User Query:</strong>
+                            <div id="userQueryText" class="p-2 border rounded bg-light"></div>
                         </div>
                         <div id="leftContent" class="markdown-container"></div>
                     </div>
@@ -119,11 +123,17 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 const data = await response.json();
-                // Don't display the question, only show the response
+                // Display both the question and response
                 leftMarkdown = data.response;
                 
-                // Clear the textarea to avoid showing the question
-                leftMarkdownInput.value = '';
+                // Show the query in its own box
+                const userQueryDisplay = document.getElementById('userQueryDisplay');
+                const userQueryText = document.getElementById('userQueryText');
+                userQueryText.textContent = prompt;
+                userQueryDisplay.style.display = 'block';
+                
+                // Keep input for reference
+                // leftMarkdownInput.value = '';
                 
                 renderMarkdown(leftContent, leftMarkdown);
             } else {
@@ -310,32 +320,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 senderGroups[item.sender] = [];
             }
             
-            // Clean up the message content
-            let cleanMessage = item.value;
-            
-            // Remove timestamp (formatted like 2025-03-07T22:00:03.693Z)
-            cleanMessage = cleanMessage.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/g, '');
-            
-            // Remove service names like "Retool AI"
-            cleanMessage = cleanMessage.replace(/^Retool AI\n/g, '');
-            
-            // Clean up extra newlines and spacing
-            cleanMessage = cleanMessage.trim();
-            
-            senderGroups[item.sender].push(cleanMessage);
+            // Keep original message content
+            let originalMessage = item.value;
+            senderGroups[item.sender].push(originalMessage);
         });
         
         // Format each sender's messages
         Object.keys(senderGroups).forEach(sender => {
-            formattedContent += `# ${sender}\n\n`;
+            // Add sender in a box labeled as "User Response"
+            formattedContent += `<div class="user-response-box mb-3">`;
+            formattedContent += `<strong>User Response:</strong>`;
+            formattedContent += `<div class="p-2 border rounded bg-light">${sender}</div>`;
+            formattedContent += `</div>\n\n`;
             
             senderGroups[sender].forEach((message, index) => {
                 // Put the complete message content directly without any additional formatting
-                formattedContent += `${message}\n\n`;
+                // Use a div to enable controlling formatting with CSS
+                formattedContent += `<div class="csv-content">${message}</div>\n\n`;
                 
                 // Add separator between messages but not after the last one
                 if (index < senderGroups[sender].length - 1) {
-                    formattedContent += `---\n\n`;
+                    formattedContent += `<hr class="my-4">\n\n`;
                 }
             });
             
@@ -523,6 +528,34 @@ document.addEventListener('DOMContentLoaded', function() {
     /* Override any markdown styles that might affect font size */
     .markdown-container * {
         font-size: 14px !important;
+        font-weight: normal !important;
+    }
+    
+    /* Style for the user response box */
+    .user-response-box {
+        margin-bottom: 15px;
+    }
+    
+    /* Style for CSV content to ensure consistent formatting */
+    .csv-content {
+        font-size: 14px !important;
+        font-weight: normal !important;
+        line-height: 1.5;
+    }
+    
+    /* Make sure tables in CSV content are formatted properly */
+    .csv-content table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+    
+    .csv-content th,
+    .csv-content td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        font-size: 14px !important;
+        font-weight: normal !important;
     }
     
     .loading-animation {
