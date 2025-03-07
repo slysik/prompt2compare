@@ -22,7 +22,7 @@
             <div class="col-md-6 playground-side">
                 <div class="card border-primary mb-3">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">JiJa AI</h5>
+                        <h5 class="card-title mb-0">ChatGPT</h5>
                         <div class="actions">
                             <button id="runJijaGptButton" class="btn btn-sm btn-light">Run</button>
                             <input type="file" id="leftFileInput" class="d-none" accept=".md">
@@ -30,7 +30,7 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-2">
-                            <textarea id="leftMarkdownInput" class="form-control small-textarea" rows="4" placeholder="Enter your question for JiJa AI..."></textarea>
+                            <textarea id="leftMarkdownInput" class="form-control small-textarea" rows="4" placeholder="Enter your question for ChatGPT..."></textarea>
                         </div>
                         <div id="leftContent" class="markdown-container"></div>
                     </div>
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
     runJijaGptButton.addEventListener('click', async function() {
         const prompt = leftMarkdownInput.value.trim();
         if (!prompt) {
-            alert('Please enter a question for JiJa AI');
+            alert('Please enter a question for ChatGPT');
             return;
         }
         
@@ -309,7 +309,20 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!senderGroups[item.sender]) {
                 senderGroups[item.sender] = [];
             }
-            senderGroups[item.sender].push(item.value);
+            
+            // Clean up the message content
+            let cleanMessage = item.value;
+            
+            // Remove timestamp (formatted like 2025-03-07T22:00:03.693Z)
+            cleanMessage = cleanMessage.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/g, '');
+            
+            // Remove service names like "Retool AI"
+            cleanMessage = cleanMessage.replace(/^Retool AI\n/g, '');
+            
+            // Clean up extra newlines and spacing
+            cleanMessage = cleanMessage.trim();
+            
+            senderGroups[item.sender].push(cleanMessage);
         });
         
         // Format each sender's messages
