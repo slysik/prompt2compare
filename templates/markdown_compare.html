@@ -163,9 +163,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function parseCSV(csvContent) {
         const lines = csvContent.split('\n');
         
-        // Check if CSV has enough rows
-        if (lines.length < 3) {
-            alert('Error: CSV file does not have enough rows. Need at least 3 rows.');
+        // Check if CSV has header row
+        if (lines.length < 2) { // Need at least header + 1 data row
+            alert('Error: CSV file needs at least a header row and one data row');
             return [];
         }
         
@@ -193,35 +193,49 @@ document.addEventListener('DOMContentLoaded', function() {
             return fields;
         };
         
-        const result = [];
-        
         try {
-            // Get row 2 (index 1), column B (index 1)
-            const row2 = lines[1];
-            const row2Fields = getFields(row2);
-            if (row2Fields.length >= 2) {
-                let cell_B2 = row2Fields[1]; // Second column (B)
-                // Remove surrounding quotes if present
-                if (cell_B2.startsWith('"') && cell_B2.endsWith('"')) {
-                    cell_B2 = cell_B2.substring(1, cell_B2.length - 1);
-                }
-                result.push(cell_B2);
+            // Parse header row to find column indexes
+            const headerRow = getFields(lines[0]);
+            const senderIndex = headerRow.findIndex(col => 
+                col.toLowerCase() === 'sender' || col.toLowerCase() === '"sender"');
+            
+            const valueIndex = headerRow.findIndex(col => 
+                col.toLowerCase() === 'value' || col.toLowerCase() === '"value"');
+            
+            if (senderIndex === -1 || valueIndex === -1) {
+                alert('Error: CSV must contain "sender" and "value" columns');
+                return [];
             }
             
-            // Get row 3 (index 2), column C (index 2)
-            const row3 = lines[2];
-            const row3Fields = getFields(row3);
-            if (row3Fields.length >= 3) {
-                let cell_C3 = row3Fields[2]; // Third column (C)
+            // Extract data from all rows
+            const result = [];
+            // Start from row 1 (skip header)
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue; // Skip empty lines
+                
+                const fields = getFields(lines[i]);
+                if (fields.length <= Math.max(senderIndex, valueIndex)) continue;
+                
+                let sender = fields[senderIndex];
+                let value = fields[valueIndex];
+                
                 // Remove surrounding quotes if present
-                if (cell_C3.startsWith('"') && cell_C3.endsWith('"')) {
-                    cell_C3 = cell_C3.substring(1, cell_C3.length - 1);
+                if (sender.startsWith('"') && sender.endsWith('"')) {
+                    sender = sender.substring(1, sender.length - 1);
                 }
-                result.push(cell_C3);
+                if (value.startsWith('"') && value.endsWith('"')) {
+                    value = value.substring(1, value.length - 1);
+                }
+                
+                // Add data entry with both sender and value
+                result.push({
+                    sender: sender,
+                    value: value
+                });
             }
             
             if (result.length === 0) {
-                alert('Error: Could not extract required cells from CSV');
+                alert('Error: No valid data rows found in CSV');
             }
             
             return result;
@@ -236,17 +250,33 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatCSVValues(values) {
         if (values.length === 0) return '*No data found in the CSV file*';
         
-        let formattedContent = '# JiJa Response\n\n';
+        let formattedContent = '# JiJa Conversations\n\n';
         
-        // Display cell B2 (first element in values)
-        if (values.length >= 1) {
-            formattedContent += `## Question\n\n${values[0]}\n\n`;
-        }
+        // Group by sender for better organization
+        const senderGroups = {};
+        values.forEach(item => {
+            if (!senderGroups[item.sender]) {
+                senderGroups[item.sender] = [];
+            }
+            senderGroups[item.sender].push(item.value);
+        });
         
-        // Display cell C3 (second element in values)
-        if (values.length >= 2) {
-            formattedContent += `## Answer\n\n${values[1]}\n\n`;
-        }
+        // Format each sender's messages
+        Object.keys(senderGroups).forEach(sender => {
+            formattedContent += `## ${sender}\n\n`;
+            
+            senderGroups[sender].forEach((message, index) => {
+                formattedContent += `### Message ${index + 1}\n\n${message}\n\n`;
+                
+                // Add separator between messages but not after the last one
+                if (index < senderGroups[sender].length - 1) {
+                    formattedContent += `---\n\n`;
+                }
+            });
+            
+            // Add extra space between sender sections
+            formattedContent += '\n\n';
+        });
         
         return formattedContent;
     }
