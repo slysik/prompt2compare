@@ -22,7 +22,7 @@
             <div class="col-md-6 playground-side">
                 <div class="card border-primary mb-3">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">ChatGPT's Response</h5>
+                        <h5 class="card-title mb-0">ChatGPT</h5>
                         <div class="actions">
                             <button id="runJijaGptButton" class="btn btn-sm btn-light">Run</button>
                             <input type="file" id="leftFileInput" class="d-none" accept=".md">
@@ -36,6 +36,10 @@
                             <strong>User Prompt:</strong>
                         </div>
                         <div id="userPromptTextLeft" class="p-2 border rounded bg-light mb-2" style="display: none;"></div>
+                        
+                        <div id="leftResponseHeader" class="response-header mb-2" style="display: none;">
+                            <strong>Response:</strong>
+                        </div>
                         <div id="leftContent" class="markdown-container"></div>
                     </div>
                 </div>
@@ -45,7 +49,7 @@
             <div class="col-md-6 playground-side">
                 <div class="card border-success mb-3">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">JiJa's Response</h5>
+                        <h5 class="card-title mb-0">JiJa Chat</h5>
                         <div class="actions">
                             <button id="rightUploadButton" class="btn btn-sm btn-light">Upload CSV</button>
                             <input type="file" id="rightFileInput" class="d-none" accept=".csv">
@@ -141,6 +145,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const userPromptTextLeft = document.getElementById('userPromptTextLeft');
                 userPromptTextLeft.textContent = prompt;
                 userPromptTextLeft.style.display = 'block';
+                
+                // Show Response header
+                const leftResponseHeader = document.getElementById('leftResponseHeader');
+                if (leftResponseHeader) leftResponseHeader.style.display = 'block';
                 
                 // Keep input for reference
                 // leftMarkdownInput.value = '';
