@@ -161,6 +161,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Parse CSV content
     function parseCSV(csvContent) {
+        // Handle potential BOM character at the start of the file
+        if (csvContent.charCodeAt(0) === 0xFEFF) {
+            csvContent = csvContent.slice(1);
+        }
+        
         const lines = csvContent.split('\n');
         
         // Check if CSV has header row
@@ -169,38 +174,81 @@ document.addEventListener('DOMContentLoaded', function() {
             return [];
         }
         
-        // Handle quoted fields with commas inside them
-        const getFields = function(line) {
-            const fields = [];
-            let insideQuotes = false;
+        // Enhanced CSV parser that properly handles quotes and newlines within fields
+        const parseCSVRows = function(text) {
+            const result = [];
+            let row = [];
             let currentField = '';
+            let insideQuotes = false;
             
-            for (let j = 0; j < line.length; j++) {
-                const char = line[j];
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1] || '';
                 
+                // Handle quotes
                 if (char === '"') {
-                    insideQuotes = !insideQuotes;
-                } else if (char === ',' && !insideQuotes) {
-                    fields.push(currentField.trim());
+                    if (insideQuotes && nextChar === '"') {
+                        // Double quotes inside a quoted field = escaped quote
+                        currentField += '"';
+                        i++; // Skip the next quote
+                    } else {
+                        // Toggle inside/outside quotes
+                        insideQuotes = !insideQuotes;
+                    }
+                }
+                // Handle commas
+                else if (char === ',' && !insideQuotes) {
+                    row.push(currentField);
                     currentField = '';
-                } else {
+                }
+                // Handle newlines
+                else if ((char === '\n' || (char === '\r' && nextChar === '\n')) && !insideQuotes) {
+                    if (char === '\r') i++; // Skip the \n in \r\n
+                    
+                    row.push(currentField);
+                    if (row.length > 0) { // Only add non-empty rows
+                        result.push(row);
+                    }
+                    row = [];
+                    currentField = '';
+                }
+                // All other characters
+                else {
                     currentField += char;
                 }
             }
             
-            // Add the last field
-            fields.push(currentField.trim());
-            return fields;
+            // Add the last field and row if there's any data
+            if (currentField !== '' || row.length > 0) {
+                row.push(currentField);
+                result.push(row);
+            }
+            
+            return result;
         };
         
+        // Parse all rows at once to properly handle newlines within quoted fields
+        const rows = parseCSVRows(csvContent);
+        
         try {
-            // Parse header row to find column indexes
-            const headerRow = getFields(lines[0]);
-            const senderIndex = headerRow.findIndex(col => 
-                col.toLowerCase() === 'sender' || col.toLowerCase() === '"sender"');
+            if (rows.length === 0) {
+                alert('Error: No valid rows found in CSV');
+                return [];
+            }
             
-            const valueIndex = headerRow.findIndex(col => 
-                col.toLowerCase() === 'value' || col.toLowerCase() === '"value"');
+            // Get header row (first row)
+            const headerRow = rows[0];
+            
+            // Find column indexes
+            const senderIndex = headerRow.findIndex(col => {
+                const cleanCol = col.trim().toLowerCase();
+                return cleanCol === 'sender' || cleanCol === '"sender"';
+            });
+            
+            const valueIndex = headerRow.findIndex(col => {
+                const cleanCol = col.trim().toLowerCase();
+                return cleanCol === 'value' || cleanCol === '"value"';
+            });
             
             if (senderIndex === -1 || valueIndex === -1) {
                 alert('Error: CSV must contain "sender" and "value" columns');
@@ -209,27 +257,23 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Extract data from all rows
             const result = [];
+            
             // Start from row 1 (skip header)
-            for (let i = 1; i < lines.length; i++) {
-                if (lines[i].trim() === '') continue; // Skip empty lines
+            for (let i = 1; i < rows.length; i++) {
+                if (rows[i].length === 0) continue; // Skip empty rows
                 
-                const fields = getFields(lines[i]);
+                const fields = rows[i];
                 if (fields.length <= Math.max(senderIndex, valueIndex)) continue;
                 
                 let sender = fields[senderIndex];
                 let value = fields[valueIndex];
                 
-                // Remove surrounding quotes if present
-                if (sender.startsWith('"') && sender.endsWith('"')) {
-                    sender = sender.substring(1, sender.length - 1);
-                }
-                if (value.startsWith('"') && value.endsWith('"')) {
-                    value = value.substring(1, value.length - 1);
-                }
+                // Ensure we preserve full content including any whitespace in the value
+                // just trim the sender for display purposes
                 
                 // Add data entry with both sender and value
                 result.push({
-                    sender: sender,
+                    sender: sender.trim(),
                     value: value
                 });
             }
@@ -237,6 +281,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (result.length === 0) {
                 alert('Error: No valid data rows found in CSV');
             }
+            
+            console.log('Parsed CSV data:', result);
             
             return result;
         } catch (error) {
@@ -250,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatCSVValues(values) {
         if (values.length === 0) return '*No data found in the CSV file*';
         
-        let formattedContent = '# JiJa Conversations\n\n';
+        let formattedContent = '';
         
         // Group by sender for better organization
         const senderGroups = {};
@@ -263,10 +309,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Format each sender's messages
         Object.keys(senderGroups).forEach(sender => {
-            formattedContent += `## ${sender}\n\n`;
+            formattedContent += `# ${sender}\n\n`;
             
             senderGroups[sender].forEach((message, index) => {
-                formattedContent += `### Message ${index + 1}\n\n${message}\n\n`;
+                // Put the complete message content directly without any additional formatting
+                formattedContent += `${message}\n\n`;
                 
                 // Add separator between messages but not after the last one
                 if (index < senderGroups[sender].length - 1) {
