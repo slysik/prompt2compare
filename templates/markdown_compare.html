@@ -22,7 +22,7 @@
             <div class="col-md-6 playground-side">
                 <div class="card border-primary mb-3">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">ChatGPT</h5>
+                        <h5 class="card-title mb-0">ChatGPT's Response</h5>
                         <div class="actions">
                             <button id="runJijaGptButton" class="btn btn-sm btn-light">Run</button>
                             <input type="file" id="leftFileInput" class="d-none" accept=".md">
@@ -36,9 +36,6 @@
                             <strong>User Prompt:</strong>
                         </div>
                         <div id="userPromptTextLeft" class="p-2 border rounded bg-light mb-2" style="display: none;"></div>
-                        <div id="leftResponseHeader" class="response-header mb-2" style="display: none;">
-                            <strong>ChatGPT's Response:</strong>
-                        </div>
                         <div id="leftContent" class="markdown-container"></div>
                     </div>
                 </div>
@@ -48,7 +45,7 @@
             <div class="col-md-6 playground-side">
                 <div class="card border-success mb-3">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">JiJa</h5>
+                        <h5 class="card-title mb-0">JiJa's Response</h5>
                         <div class="actions">
                             <button id="rightUploadButton" class="btn btn-sm btn-light">Upload CSV</button>
                             <input type="file" id="rightFileInput" class="d-none" accept=".csv">
@@ -59,9 +56,6 @@
                             <strong>User Prompt:</strong>
                         </div>
                         <div id="userPromptContent" class="mb-2" style="display: none;"></div>
-                        <div id="rightResponseHeader" class="response-header mb-2" style="display: none;">
-                            <strong>JiJa's Response:</strong>
-                        </div>
                         <div id="rightContent" class="markdown-container"></div>
                     </div>
                 </div>
@@ -136,16 +130,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Display both the question and response
                 leftMarkdown = data.response;
                 
-                // Show the prompt and response headers
+                // Show the prompt header and text
                 const leftPromptHeader = document.getElementById('leftPromptHeader');
                 leftPromptHeader.style.display = 'block';
                 
                 const userPromptTextLeft = document.getElementById('userPromptTextLeft');
                 userPromptTextLeft.textContent = prompt;
                 userPromptTextLeft.style.display = 'block';
-                
-                const leftResponseHeader = document.getElementById('leftResponseHeader');
-                leftResponseHeader.style.display = 'block';
                 
                 // Keep input for reference
                 // leftMarkdownInput.value = '';
@@ -339,9 +330,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 senderGroups[item.sender] = [];
             }
             
-            // Keep original message content
-            let originalMessage = item.value;
-            senderGroups[item.sender].push(originalMessage);
+            // Remove only "Retool AI" from the beginning if present
+            let cleanedMessage = item.value;
+            if (cleanedMessage.startsWith("Retool AI\n")) {
+                cleanedMessage = cleanedMessage.substring("Retool AI\n".length);
+            }
+            
+            senderGroups[item.sender].push(cleanedMessage);
         });
         
         // Format each sender's messages
