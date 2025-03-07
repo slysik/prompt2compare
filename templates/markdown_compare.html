@@ -32,6 +32,10 @@
                         <div class="mb-2">
                             <textarea id="leftMarkdownInput" class="form-control small-textarea" rows="3" placeholder="Enter your question for ChatGPT..."></textarea>
                         </div>
+                        <div id="leftPromptHeader" class="response-header mb-2" style="display: none;">
+                            <strong>User Prompt:</strong>
+                        </div>
+                        <div id="userPromptTextLeft" class="p-2 border rounded bg-light mb-2" style="display: none;"></div>
                         <div id="leftResponseHeader" class="response-header mb-2" style="display: none;">
                             <strong>ChatGPT's Response:</strong>
                         </div>
@@ -51,6 +55,10 @@
                         </div>
                     </div>
                     <div class="card-body">
+                        <div id="rightPromptHeader" class="response-header mb-2" style="display: none;">
+                            <strong>User Prompt:</strong>
+                        </div>
+                        <div id="userPromptContent" class="mb-2" style="display: none;"></div>
                         <div id="rightResponseHeader" class="response-header mb-2" style="display: none;">
                             <strong>JiJa's Response:</strong>
                         </div>
@@ -128,7 +136,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Display both the question and response
                 leftMarkdown = data.response;
                 
-                // Show the response header
+                // Show the prompt and response headers
+                const leftPromptHeader = document.getElementById('leftPromptHeader');
+                leftPromptHeader.style.display = 'block';
+                
+                const userPromptTextLeft = document.getElementById('userPromptTextLeft');
+                userPromptTextLeft.textContent = prompt;
+                userPromptTextLeft.style.display = 'block';
+                
                 const leftResponseHeader = document.getElementById('leftResponseHeader');
                 leftResponseHeader.style.display = 'block';
                 
@@ -331,11 +346,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Format each sender's messages
         Object.keys(senderGroups).forEach(sender => {
-            // Add sender as "User Prompt:" in bold
-            formattedContent += `<div class="user-prompt-box mb-2">`;
-            formattedContent += `<strong>User Prompt:</strong>`;
-            formattedContent += `<div class="p-2 border rounded bg-light">${sender}</div>`;
-            formattedContent += `</div>\n\n`;
+            // Get the sender content for the User Prompt section
+            const senderText = sender;
+            
+            // Display the sender in the dedicated User Prompt area instead of in the markdown
+            setTimeout(() => {
+                const rightPromptHeader = document.getElementById('rightPromptHeader');
+                rightPromptHeader.style.display = 'block';
+                
+                const userPromptContent = document.getElementById('userPromptContent');
+                userPromptContent.innerHTML = `<div class="p-2 border rounded bg-light">${senderText}</div>`;
+                userPromptContent.style.display = 'block';
+            }, 0);
             
             senderGroups[sender].forEach((message, index) => {
                 // Put the complete message content directly without any additional formatting
