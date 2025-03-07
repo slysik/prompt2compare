@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}JiJa - Markdown Comparison{% endblock %}
+{% block title %}ChatGPT versus JiJa{% endblock %}
 
 {% block content %}
 
@@ -8,7 +8,7 @@
     <div class="playground-header mb-1">
         <div class="row align-items-center">
             <div class="col-md-6">
-                <h4>JiJa Comparison</h4>
+                <h4>ChatGPT versus JiJa</h4>
             </div>
             <div class="col-md-6 d-flex justify-content-end">
                 <button id="exportButton" class="btn btn-sm btn-secondary">Export</button>
@@ -22,16 +22,16 @@
             <div class="col-md-6 playground-side">
                 <div class="card border-primary mb-3">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">New version</h5>
+                        <h5 class="card-title mb-0">ChatGPT</h5>
                         <div class="actions">
-                            <button id="leftUploadButton" class="btn btn-sm btn-light">Upload File</button>
+                            <button id="leftUploadButton" class="btn btn-sm btn-light">Upload</button>
                             <button id="leftRenderButton" class="btn btn-sm btn-light ms-2">Render</button>
                             <input type="file" id="leftFileInput" class="d-none" accept=".md">
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <textarea id="leftMarkdownInput" class="form-control" rows="8" placeholder="Paste markdown here..."></textarea>
+                        <div class="mb-2">
+                            <textarea id="leftMarkdownInput" class="form-control small-textarea" rows="4" placeholder="Paste markdown here..."></textarea>
                         </div>
                         <div id="leftContent" class="markdown-container"></div>
                     </div>
@@ -44,8 +44,8 @@
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">JiJa</h5>
                         <div class="actions">
-                            <button id="rightUploadButton" class="btn btn-sm btn-light">Upload from JiJa</button>
-                            <input type="file" id="rightFileInput" class="d-none" accept=".md,.csv">
+                            <button id="rightUploadButton" class="btn btn-sm btn-light">Upload CSV</button>
+                            <input type="file" id="rightFileInput" class="d-none" accept=".csv">
                         </div>
                     </div>
                     <div class="card-body">
@@ -145,16 +145,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function parseCSV(csvContent) {
         const lines = csvContent.split('\n');
         
-        // Focus only on row 3 (index 2) as per the requirement
+        // Check if CSV has enough rows
         if (lines.length < 3) {
             alert('Error: CSV file does not have enough rows. Need at least 3 rows.');
             return [];
         }
         
-        // Get the "Value" column from row 3 (index 2)
-        const row3 = lines[2];
-        
-        // Handle quoted fields with commas inside them to get the "Value" column
+        // Handle quoted fields with commas inside them
         const getFields = function(line) {
             const fields = [];
             let insideQuotes = false;
@@ -178,99 +175,61 @@ document.addEventListener('DOMContentLoaded', function() {
             return fields;
         };
         
-        // Get header row to find "Value" column
-        const headers = getFields(lines[0]);
+        const result = [];
         
-        // Find the index of the "Value" column
-        const valueIndex = headers.findIndex(header => 
-            header.toLowerCase() === 'value' || 
-            header.toLowerCase() === '"value"'
-        );
-        
-        if (valueIndex === -1) {
-            // If "Value" column doesn't exist, show error and return empty
-            alert('Error: No "Value" column found in CSV file');
+        try {
+            // Get row 2 (index 1), column B (index 1)
+            const row2 = lines[1];
+            const row2Fields = getFields(row2);
+            if (row2Fields.length >= 2) {
+                let cell_B2 = row2Fields[1]; // Second column (B)
+                // Remove surrounding quotes if present
+                if (cell_B2.startsWith('"') && cell_B2.endsWith('"')) {
+                    cell_B2 = cell_B2.substring(1, cell_B2.length - 1);
+                }
+                result.push(cell_B2);
+            }
+            
+            // Get row 3 (index 2), column C (index 2)
+            const row3 = lines[2];
+            const row3Fields = getFields(row3);
+            if (row3Fields.length >= 3) {
+                let cell_C3 = row3Fields[2]; // Third column (C)
+                // Remove surrounding quotes if present
+                if (cell_C3.startsWith('"') && cell_C3.endsWith('"')) {
+                    cell_C3 = cell_C3.substring(1, cell_C3.length - 1);
+                }
+                result.push(cell_C3);
+            }
+            
+            if (result.length === 0) {
+                alert('Error: Could not extract required cells from CSV');
+            }
+            
+            return result;
+        } catch (error) {
+            console.error('Error parsing CSV:', error);
+            alert('Error parsing CSV file: ' + error.message);
             return [];
         }
-        
-        // Get row 3 fields
-        const row3Fields = getFields(row3);
-        
-        // Get the value from the "Value" column
-        if (row3Fields.length > valueIndex) {
-            let value = row3Fields[valueIndex];
-            
-            // Remove surrounding quotes if present
-            if (value.startsWith('"') && value.endsWith('"')) {
-                value = value.substring(1, value.length - 1);
-            }
-            
-            // Find the first pipe character and extract text after it
-            const firstPipeIndex = value.indexOf('|');
-            if (firstPipeIndex !== -1) {
-                // Extract everything from the first pipe to the end
-                value = value.substring(firstPipeIndex);
-                
-                // Find the last pipe character
-                const lastPipeIndex = value.lastIndexOf('|');
-                if (lastPipeIndex !== -1 && lastPipeIndex > 0) {
-                    // Only keep content between first and last pipe
-                    value = value.substring(0, lastPipeIndex + 1);
-                }
-                
-                return [value];
-            } else {
-                alert('Error: No pipe character (|) found in the Value column');
-                return [];
-            }
-        }
-        
-        return [];
     }
     
-    // Format the CSV values as a nicely formatted response with table
+    // Format the CSV values as a nicely formatted response
     function formatCSVValues(values) {
-        if (values.length === 0) return '*No table data found in the CSV file*';
+        if (values.length === 0) return '*No data found in the CSV file*';
         
         let formattedContent = '# JiJa Response\n\n';
         
-        // Process the pipe-delimited table content
-        const tableContent = values[0];
-        
-        // Split the text by newlines to get rows
-        const rows = tableContent.split('\n').filter(row => row.trim() !== '');
-        
-        if (rows.length === 0) {
-            return '*No table rows found in the CSV Value column*';
+        // Display cell B2 (first element in values)
+        if (values.length >= 1) {
+            formattedContent += `## Question\n\n${values[0]}\n\n`;
         }
         
-        // Process the table to make it prettier
-        let markdownTable = '';
-        let headerProcessed = false;
+        // Display cell C3 (second element in values)
+        if (values.length >= 2) {
+            formattedContent += `## Answer\n\n${values[1]}\n\n`;
+        }
         
-        rows.forEach(row => {
-            // Clean the row and split by pipe
-            const cleanRow = row.trim();
-            if (!cleanRow.includes('|')) return;
-            
-            // Split by pipe and remove empty fields (from leading/trailing pipes)
-            const cells = cleanRow.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
-            
-            if (cells.length === 0) return;
-            
-            // Create a table row
-            const tableRow = '| ' + cells.join(' | ') + ' |';
-            markdownTable += tableRow + '\n';
-            
-            // After the first row, add a header separator
-            if (!headerProcessed) {
-                const headerSeparator = '| ' + cells.map(() => '---').join(' | ') + ' |';
-                markdownTable += headerSeparator + '\n';
-                headerProcessed = true;
-            }
-        });
-        
-        formattedContent += markdownTable + '\n\n';
         return formattedContent;
     }
     
@@ -349,14 +308,17 @@ document.addEventListener('DOMContentLoaded', function() {
         line-height: 1.6;
     }
     
-    #leftMarkdownInput {
+    .small-textarea {
         font-family: monospace;
-        font-size: 14px;
+        font-size: 13px;
         resize: vertical;
         border-color: #ccc;
+        min-height: 70px;
+        max-height: 200px;
+        padding: 8px;
     }
     
-    #leftMarkdownInput:focus {
+    .small-textarea:focus {
         border-color: #4299e1;
         box-shadow: 0 0 0 1px #4299e1;
     }
