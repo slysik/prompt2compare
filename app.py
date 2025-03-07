@@ -62,6 +62,15 @@ def compare():
     except Exception as e:
         logger.error(f"Error loading comparison interface: {str(e)}")
         return render_template('template_and_response_compare.html', templates=[], error_message=f"Error: {str(e)}")
+        
+@app.route('/markdown_compare')
+def markdown_compare():
+    """Markdown comparison interface."""
+    try:
+        return render_template('markdown_compare.html')
+    except Exception as e:
+        logger.error(f"Error loading markdown comparison interface: {str(e)}")
+        return render_template('markdown_compare.html', error_message=f"Error: {str(e)}")
 
 @app.route('/template/<template_name>')
 def get_template(template_name):
@@ -392,6 +401,69 @@ def export_comparison():
         })
     except Exception as e:
         logger.error(f"Error exporting comparison: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/export_markdown_comparison', methods=['POST'])
+def export_markdown_comparison():
+    """Export the markdown comparison results to a file."""
+    try:
+        data = request.json
+        left_content = data.get('left_content', '')
+        right_content = data.get('right_content', '')
+        
+        # Check if the right content is already formatted (from CSV)
+        is_formatted_csv = right_content.startswith('# JiJa Response')
+        
+        # Create markdown content
+        if is_formatted_csv:
+            # For CSV data, we want to preserve the rendering
+            markdown_content = f"""# Markdown Comparison - JiJa
+
+## Date
+{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+## Left Side (New Version)
+```markdown
+{left_content}
+```
+
+## Right Side (JiJa)
+{right_content}
+"""
+        else:
+            # For regular markdown files
+            markdown_content = f"""# Markdown Comparison - JiJa
+
+## Date
+{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+## Left Side (New Version)
+```markdown
+{left_content}
+```
+
+## Right Side (JiJa)
+```markdown
+{right_content}
+```
+"""
+        
+        # Create filename
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"jija_comparison_{timestamp}.md"
+        filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+        
+        # Write to file
+        with open(filepath, 'w') as f:
+            f.write(markdown_content)
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'filepath': filepath
+        })
+    except Exception as e:
+        logger.error(f"Error exporting markdown comparison: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/download_comparison/<filename>')

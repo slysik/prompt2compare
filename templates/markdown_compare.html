@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}JiJa - Markdown Comparison{% endblock %}
+
+{% block content %}
+
+<div class="playground-container">
+    <div class="playground-header mb-1">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h4>JiJa Comparison</h4>
+            </div>
+            <div class="col-md-6 d-flex justify-content-end">
+                <button id="exportButton" class="btn btn-sm btn-secondary">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="playground-content">
+        <div class="row">
+            <!-- Left side -->
+            <div class="col-md-6 playground-side">
+                <div class="card border-primary mb-3">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">New version</h5>
+                        <div class="actions">
+                            <button id="leftUploadButton" class="btn btn-sm btn-light">Upload New Version</button>
+                            <input type="file" id="leftFileInput" class="d-none" accept=".md">
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="leftContent" class="markdown-container"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right side -->
+            <div class="col-md-6 playground-side">
+                <div class="card border-success mb-3">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">JiJa</h5>
+                        <div class="actions">
+                            <button id="rightUploadButton" class="btn btn-sm btn-light">Upload from JiJa</button>
+                            <input type="file" id="rightFileInput" class="d-none" accept=".md,.csv">
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="rightContent" class="markdown-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const leftUploadButton = document.getElementById('leftUploadButton');
+    const rightUploadButton = document.getElementById('rightUploadButton');
+    const leftFileInput = document.getElementById('leftFileInput');
+    const rightFileInput = document.getElementById('rightFileInput');
+    const leftContent = document.getElementById('leftContent');
+    const rightContent = document.getElementById('rightContent');
+    const exportButton = document.getElementById('exportButton');
+    
+    // Store markdown content
+    let leftMarkdown = '';
+    let rightMarkdown = '';
+    
+    // Upload handlers
+    leftUploadButton.addEventListener('click', function() {
+        leftFileInput.click();
+    });
+    
+    rightUploadButton.addEventListener('click', function() {
+        rightFileInput.click();
+    });
+    
+    // File input handlers
+    leftFileInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                leftMarkdown = e.target.result;
+                renderMarkdown(leftContent, leftMarkdown);
+            };
+            reader.readAsText(file);
+        }
+    });
+    
+    rightFileInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fileContent = e.target.result;
+                
+                // Check if it's a CSV file
+                if (file.name.toLowerCase().endsWith('.csv')) {
+                    // Parse CSV and extract "Value" column
+                    const parsedData = parseCSV(fileContent);
+                    const formattedContent = formatCSVValues(parsedData);
+                    rightMarkdown = formattedContent;
+                } else {
+                    // Regular markdown file
+                    rightMarkdown = fileContent;
+                }
+                
+                renderMarkdown(rightContent, rightMarkdown);
+            };
+            reader.readAsText(file);
+        }
+    });
+    
+    // Parse CSV content
+    function parseCSV(csvContent) {
+        const lines = csvContent.split('\n');
+        
+        // Focus only on row 3 (index 2) as per the requirement
+        if (lines.length < 3) {
+            alert('Error: CSV file does not have enough rows. Need at least 3 rows.');
+            return [];
+        }
+        
+        // Get the "Value" column from row 3 (index 2)
+        const row3 = lines[2];
+        
+        // Handle quoted fields with commas inside them to get the "Value" column
+        const getFields = function(line) {
+            const fields = [];
+            let insideQuotes = false;
+            let currentField = '';
+            
+            for (let j = 0; j < line.length; j++) {
+                const char = line[j];
+                
+                if (char === '"') {
+                    insideQuotes = !insideQuotes;
+                } else if (char === ',' && !insideQuotes) {
+                    fields.push(currentField.trim());
+                    currentField = '';
+                } else {
+                    currentField += char;
+                }
+            }
+            
+            // Add the last field
+            fields.push(currentField.trim());
+            return fields;
+        };
+        
+        // Get header row to find "Value" column
+        const headers = getFields(lines[0]);
+        
+        // Find the index of the "Value" column
+        const valueIndex = headers.findIndex(header => 
+            header.toLowerCase() === 'value' || 
+            header.toLowerCase() === '"value"'
+        );
+        
+        if (valueIndex === -1) {
+            // If "Value" column doesn't exist, show error and return empty
+            alert('Error: No "Value" column found in CSV file');
+            return [];
+        }
+        
+        // Get row 3 fields
+        const row3Fields = getFields(row3);
+        
+        // Get the value from the "Value" column
+        if (row3Fields.length > valueIndex) {
+            let value = row3Fields[valueIndex];
+            
+            // Remove surrounding quotes if present
+            if (value.startsWith('"') && value.endsWith('"')) {
+                value = value.substring(1, value.length - 1);
+            }
+            
+            // Find the first pipe character and extract text after it
+            const firstPipeIndex = value.indexOf('|');
+            if (firstPipeIndex !== -1) {
+                // Extract everything from the first pipe to the end
+                value = value.substring(firstPipeIndex);
+                
+                // Find the last pipe character
+                const lastPipeIndex = value.lastIndexOf('|');
+                if (lastPipeIndex !== -1 && lastPipeIndex > 0) {
+                    // Only keep content between first and last pipe
+                    value = value.substring(0, lastPipeIndex + 1);
+                }
+                
+                return [value];
+            } else {
+                alert('Error: No pipe character (|) found in the Value column');
+                return [];
+            }
+        }
+        
+        return [];
+    }
+    
+    // Format the CSV values as a nicely formatted response with table
+    function formatCSVValues(values) {
+        if (values.length === 0) return '*No table data found in the CSV file*';
+        
+        let formattedContent = '# JiJa Response\n\n';
+        
+        // Process the pipe-delimited table content
+        const tableContent = values[0];
+        
+        // Split the text by newlines to get rows
+        const rows = tableContent.split('\n').filter(row => row.trim() !== '');
+        
+        if (rows.length === 0) {
+            return '*No table rows found in the CSV Value column*';
+        }
+        
+        // Process the table to make it prettier
+        let markdownTable = '';
+        let headerProcessed = false;
+        
+        rows.forEach(row => {
+            // Clean the row and split by pipe
+            const cleanRow = row.trim();
+            if (!cleanRow.includes('|')) return;
+            
+            // Split by pipe and remove empty fields (from leading/trailing pipes)
+            const cells = cleanRow.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
+            
+            if (cells.length === 0) return;
+            
+            // Create a table row
+            const tableRow = '| ' + cells.join(' | ') + ' |';
+            markdownTable += tableRow + '\n';
+            
+            // After the first row, add a header separator
+            if (!headerProcessed) {
+                const headerSeparator = '| ' + cells.map(() => '---').join(' | ') + ' |';
+                markdownTable += headerSeparator + '\n';
+                headerProcessed = true;
+            }
+        });
+        
+        formattedContent += markdownTable + '\n\n';
+        return formattedContent;
+    }
+    
+    // Render markdown
+    function renderMarkdown(container, markdown) {
+        container.innerHTML = marked.parse(markdown);
+    }
+    
+    // Export comparison
+    exportButton.addEventListener('click', async function() {
+        if (!leftMarkdown && !rightMarkdown) {
+            alert('Please upload at least one markdown file to export');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/export_markdown_comparison', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    left_content: leftMarkdown,
+                    right_content: rightMarkdown
+                }),
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Trigger download
+                    window.location.href = `/download_comparison/${data.filename}`;
+                } else {
+                    throw new Error('Failed to export comparison');
+                }
+            } else {
+                throw new Error('Failed to export comparison');
+            }
+        } catch (error) {
+            alert(`Error exporting comparison: ${error.message}`);
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .playground-container {
+        min-height: calc(100vh - 50px);
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .playground-side {
+        padding: 0 10px;
+    }
+    
+    .markdown-container {
+        min-height: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        padding: 10px;
+        border-radius: 4px;
+        background-color: white;
+        border: 1px solid #ddd;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+    
+    .markdown-container h1, 
+    .markdown-container h2, 
+    .markdown-container h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .markdown-container h3 {
+        color: #2070d8;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 0.3rem;
+    }
+    
+    /* Table styles for markdown rendering */
+    .markdown-container table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    
+    .markdown-container th,
+    .markdown-container td {
+        border: 1px solid #e2e8f0;
+        padding: 12px 15px;
+        text-align: left;
+    }
+    
+    .markdown-container tr:nth-child(even) {
+        background-color: #f8fafc;
+    }
+    
+    .markdown-container tr:hover {
+        background-color: #f1f5f9;
+    }
+    
+    .markdown-container th {
+        padding-top: 14px;
+        padding-bottom: 14px;
+        text-align: left;
+        background-color: #2563eb;
+        color: white;
+        font-weight: 600;
+        position: relative;
+    }
+    
+    .markdown-container th:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: rgba(255,255,255,0.3);
+    }
+</style>
+{% endblock %}
