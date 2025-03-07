@@ -468,7 +468,7 @@ def export_markdown_comparison():
 
 @app.route('/call_jija_comp', methods=['POST'])
 def call_jija_comp():
-    """Call the JiJa Comp GPT with the provided prompt."""
+    """Call the JiJa AI with the provided prompt."""
     try:
         data = request.json
         prompt = data.get('prompt', '')
@@ -478,8 +478,8 @@ def call_jija_comp():
         if not prompt:
             return jsonify({'error': 'Prompt cannot be empty'}), 400
         
-        # Call the JiJa Comp GPT
-        logger.info(f"Calling JiJa Comp GPT with prompt: {prompt[:100]}...")
+        # Call the JiJa AI simulation
+        logger.info(f"Calling JiJa AI with prompt: {prompt[:100]}...")
         response = call_jija_comp_gpt(
             message=prompt,
             temperature=temperature,
@@ -490,7 +490,7 @@ def call_jija_comp():
             'response': response
         })
     except Exception as e:
-        logger.error(f"Error calling JiJa Comp GPT: {str(e)}")
+        logger.error(f"Error calling JiJa AI: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/download_comparison/<filename>')

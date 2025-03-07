@@ -5,8 +5,8 @@ from config import OPENAI_API_KEY
 # Set API key
 openai.api_key = OPENAI_API_KEY
 
-# JiJa Comp GPT ID
-JIJA_COMP_GPT_ID = "g-67cb4c89de148191abd61969a8073ee0"
+# Standard GPT model - Custom GPTs aren't directly accessible via API
+GPT_MODEL = "gpt-4o"
 
 def generate_completion(user_message="", system_message="You are a helpful AI assistant.", assistant_message="", model="gpt-4o", temperature=0.7, max_tokens=500, **kwargs):
     """
@@ -66,23 +66,40 @@ def generate_completion(user_message="", system_message="You are a helpful AI as
 
 def call_jija_comp_gpt(message, temperature=0.7, max_tokens=1000):
     """
-    Calls the JiJa Comp GPT with the given message.
+    Simulates JiJa Comp GPT with a standard GPT-4o model using a system prompt.
     """
     try:
-        logging.info(f"Calling JiJa Comp GPT with message: {message[:100]}...")
+        logging.info(f"Calling JiJa Comp simulation with message: {message[:100]}...")
+        
+        # Create a system prompt to simulate JiJa Comp GPT behavior
+        system_prompt = """You are JiJa, an AI assistant specializing in business comparisons, analysis, and metrics. 
+        Your primary function is to help users compare data, analyze business metrics, and provide insights.
+        
+        When responding to queries about comparisons:
+        1. Be concise and focus on the key differences
+        2. Present information in clear, structured formats (tables when relevant)
+        3. Highlight important metrics and quantifiable data
+        4. Provide context for why certain differences matter
+        5. Be objective and balanced in your analysis
+        
+        Your tone should be professional, analytical, and helpful. Provide direct answers that are easy to understand.
+        """
         
         # Create a formatted prompt that includes all message types
         response = openai.ChatCompletion.create(
-            model=JIJA_COMP_GPT_ID,  # Use the specific JiJa-comp GPT ID
-            messages=[{"role": "user", "content": message}],
+            model=GPT_MODEL,  # Use GPT-4o model
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
             temperature=temperature,
             max_tokens=max_tokens
         )
         
         return response.choices[0].message["content"]
     except Exception as e:
-        logging.error(f"Error calling JiJa Comp GPT: {str(e)}")
-        return f"Error calling JiJa Comp GPT: {str(e)}"
+        logging.error(f"Error calling JiJa simulation: {str(e)}")
+        return f"Error calling JiJa simulation: {str(e)}"
 
 def suggest_prompt_improvements(system_message="", user_message="", assistant_message="", model="gpt-3.5-turbo"):
     """
