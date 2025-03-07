@@ -56,6 +56,10 @@
                             <strong>User Prompt:</strong>
                         </div>
                         <div id="userPromptContent" class="mb-2" style="display: none;"></div>
+                        
+                        <div id="rightResponseHeader" class="response-header mb-2" style="display: none;">
+                            <strong>Response:</strong>
+                        </div>
                         <div id="rightContent" class="markdown-container"></div>
                     </div>
                 </div>
@@ -338,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let valueContents = values.map(item => item.value);
         console.log("Extracted values:", valueContents);
         
-        // Show User Prompt (first value)
+        // Show User Prompt (sender column)
         if (values.length > 0) {
             const sender = values[0].sender;
             console.log("Sender:", sender);
@@ -352,6 +356,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 userPromptContent.innerHTML = `<div class="p-2 border rounded bg-light">${sender}</div>`;
                 userPromptContent.style.display = 'block';
             }
+            
+            // Show Response header
+            const rightResponseHeader = document.getElementById('rightResponseHeader');
+            if (rightResponseHeader) rightResponseHeader.style.display = 'block';
         }
         
         // Simply join all values with newlines
