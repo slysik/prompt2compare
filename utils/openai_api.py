@@ -1,33 +1,34 @@
 import logging
-import openai
+from openai import OpenAI
 from config import OPENAI_API_KEY
 
-# Set API key
-openai.api_key = OPENAI_API_KEY
+# Initialize OpenAI client with minimal parameters
+client = OpenAI(api_key=OPENAI_API_KEY)
 
-# Standard GPT model - Custom GPTs aren't directly accessible via API
+# Standard GPT model - Used as default
 GPT_MODEL = "gpt-4o"
 
 def generate_completion(user_message="", system_message="You are a helpful AI assistant.", assistant_message="", model="gpt-4o", temperature=0.7, max_tokens=500, **kwargs):
     """
     Generate a completion using OpenAI API with separated message fields.
+    Supports both standard models and custom GPTs.
     """
     try:
-        # Always use gpt-4o as the model
-        model = "gpt-4o"  # Force the model to be gpt-4o
-            
+        # Check if this is a custom GPT (indicated by g- prefix in model ID)
+        is_custom_gpt = model.startswith("g-")
+        
         messages = []
         
-        # Add system message if provided
-        if system_message:
+        # Add system message if provided (only for non-custom GPTs)
+        if system_message and not is_custom_gpt:
             messages.append({"role": "system", "content": system_message})
         
         # Add user message if provided
         if user_message:
             messages.append({"role": "user", "content": user_message})
         
-        # Add assistant message if provided
-        if assistant_message:
+        # Add assistant message if provided (only for non-custom GPTs)
+        if assistant_message and not is_custom_gpt:
             messages.append({"role": "assistant", "content": assistant_message})
             
         # If no messages were added, add a default user message
@@ -51,7 +52,10 @@ def generate_completion(user_message="", system_message="You are a helpful AI as
         logging.info(f"Generating completion with model: {model}")
         logging.info(f"Parameters: temp={temperature}, max_tokens={max_tokens}")
         
-        response = openai.ChatCompletion.create(
+        # Both custom GPTs and standard models use the same API call in v1.0.0+
+        logging.info(f"Using model: {model}")
+        
+        response = client.chat.completions.create(
             model=model,
             messages=messages,
             temperature=temperature,
@@ -59,7 +63,7 @@ def generate_completion(user_message="", system_message="You are a helpful AI as
             **clean_kwargs
         )
         
-        return response.choices[0].message["content"]
+        return response.choices[0].message.content
     except Exception as e:
         logging.error(f"Error generating completion: {str(e)}")
         return f"Error generating response: {str(e)}"
@@ -86,7 +90,7 @@ def call_jija_comp_gpt(message, temperature=0.7, max_tokens=1000):
         """
         
         # Create a formatted prompt that includes all message types
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=GPT_MODEL,  # Use GPT-4o model
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -96,7 +100,7 @@ def call_jija_comp_gpt(message, temperature=0.7, max_tokens=1000):
             max_tokens=max_tokens
         )
         
-        return response.choices[0].message["content"]
+        return response.choices[0].message.content
     except Exception as e:
         logging.error(f"Error calling JiJa simulation: {str(e)}")
         return f"Error calling JiJa simulation: {str(e)}"
@@ -152,14 +156,14 @@ def suggest_prompt_improvements(system_message="", user_message="", assistant_me
         logging.info(f"Generating prompt improvement suggestions with model: {model}")
         logging.info(f"System msg length: {len(system_message)}, User msg length: {len(user_message)}, Assistant msg length: {len(assistant_message)}")
         
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": suggestion_prompt}],
             temperature=0.8,
             max_tokens=2000
         )
         
-        suggestion = response.choices[0].message["content"]
+        suggestion = response.choices[0].message.content
         
         # Validate output format
         if not ("SYSTEM:" in suggestion and "USER:" in suggestion and "ASSISTANT:" in suggestion):

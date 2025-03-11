@@ -2,17 +2,16 @@ import os
 import logging
 import json
 import datetime
-import openai  # Import OpenAI directly for usage in routes
+from openai import OpenAI  # Import OpenAI client
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 from pathlib import Path
 
 # Import utils
 from utils.promptlayer_api import get_all_templates, get_template_details, check_api_connection
-from utils.openai_api import generate_completion, suggest_prompt_improvements, call_jija_comp_gpt
+from utils.openai_api import generate_completion, suggest_prompt_improvements, call_jija_comp_gpt, client
 from config import OPENAI_API_KEY
 
-# Set the OpenAI API key globally for direct usage in routes
-openai.api_key = OPENAI_API_KEY
+# Use the pre-initialized client from openai_api.py
 
 # Import config
 from config import PORT, PROMPTLAYER_API_KEY, OPENAI_API_KEY
@@ -94,8 +93,8 @@ def generate_response():
         user_message = data.get('user_message', '')
         assistant_message = data.get('assistant_message', '')
         
-        # Force model to gpt-4o as requested
-        model = "gpt-4o"
+        # Get model (allow custom GPT selection)
+        model = data.get('model', 'gpt-4o')
         
         # Get numeric parameters with proper type conversion and validation
         try:
@@ -192,7 +191,7 @@ def suggest_improvements():
             Return ONLY the improved system message with no additional commentary.
             """
             
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": suggestion_prompt}],
                 temperature=0.8,
@@ -215,7 +214,7 @@ def suggest_improvements():
             Return ONLY the improved user message with no additional commentary.
             """
             
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": suggestion_prompt}],
                 temperature=0.8,
@@ -239,7 +238,7 @@ def suggest_improvements():
             Return ONLY the improved assistant message with no additional commentary.
             """
             
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": suggestion_prompt}],
                 temperature=0.8,

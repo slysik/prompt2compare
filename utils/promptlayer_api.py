@@ -273,8 +273,9 @@ def process_specific_template(template_data):
                     user_message = value
                     break
         
-        # Ensure model is always gpt-4o
-        model = "gpt-4o"
+        # Default model if none is specified
+        if not model:
+            model = "gpt-4o"
         
         # Create the final template object
         template_details = {
