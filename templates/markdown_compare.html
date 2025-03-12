@@ -12,6 +12,7 @@
             </div>
             <div class="col-md-6 d-flex justify-content-end">
                 <button id="exportButton" class="btn btn-sm btn-secondary">Export</button>
+                <button id="copyJiJaButton" class="btn btn-sm btn-info ml-2" style="margin-left: 10px;">Copy JiJa (Formatted)</button>
             </div>
         </div>
     </div>
@@ -423,6 +424,105 @@ document.addEventListener('DOMContentLoaded', function() {
             alert(`Error exporting comparison: ${error.message}`);
         }
     });
+    
+    // Copy JiJa content as formatted HTML table with styling
+    const copyJiJaButton = document.getElementById('copyJiJaButton');
+    copyJiJaButton.addEventListener('click', function() {
+        if (!rightMarkdown) {
+            alert('Please upload JiJa Chat content first');
+            return;
+        }
+        
+        // Create a temporary, hidden div to hold the rendered HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.top = '0';
+        document.body.appendChild(tempDiv);
+        
+        // Parse the markdown and set as HTML
+        tempDiv.innerHTML = marked.parse(rightMarkdown);
+        
+        // Apply additional styling to tables for better copy/paste results
+        const tables = tempDiv.querySelectorAll('table');
+        tables.forEach(table => {
+            // Add border styling
+            table.style.borderCollapse = 'collapse';
+            table.style.width = '100%';
+            table.style.border = '1px solid #ddd';
+            
+            // Style the header cells
+            const headerCells = table.querySelectorAll('th');
+            headerCells.forEach(th => {
+                th.style.backgroundColor = '#2563eb';
+                th.style.color = 'white';
+                th.style.padding = '8px';
+                th.style.textAlign = 'left';
+                th.style.border = '1px solid #ddd';
+                th.style.fontWeight = 'bold';
+            });
+            
+            // Style all cells
+            const cells = table.querySelectorAll('td');
+            cells.forEach((td, index) => {
+                td.style.padding = '8px';
+                td.style.border = '1px solid #ddd';
+                
+                // Alternate row background colors
+                const row = td.parentElement;
+                if (row.rowIndex % 2 === 1) {
+                    td.style.backgroundColor = '#f8fafc';
+                } else {
+                    td.style.backgroundColor = 'white';
+                }
+            });
+        });
+        
+        // Style lists
+        const lists = tempDiv.querySelectorAll('ul, ol');
+        lists.forEach(list => {
+            list.style.marginLeft = '20px';
+        });
+        
+        // Style list items
+        const listItems = tempDiv.querySelectorAll('li');
+        listItems.forEach(li => {
+            li.style.marginBottom = '5px';
+        });
+        
+        // Create a range and selection
+        const range = document.createRange();
+        range.selectNode(tempDiv);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        // Execute copy command
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                // Show notification
+                const notification = document.createElement('div');
+                notification.className = 'copy-notification';
+                notification.textContent = 'JiJa content copied to clipboard!';
+                document.body.appendChild(notification);
+                
+                // Remove notification after 2 seconds
+                setTimeout(function() {
+                    document.body.removeChild(notification);
+                }, 2000);
+            } else {
+                throw new Error('Copy command failed');
+            }
+        } catch (err) {
+            console.error('Could not copy text: ', err);
+            alert('Failed to copy to clipboard: ' + err);
+        }
+        
+        // Clean up
+        selection.removeAllRanges();
+        document.body.removeChild(tempDiv);
+    });
 });
 </script>
 {% endblock %}
@@ -618,6 +718,26 @@ document.addEventListener('DOMContentLoaded', function() {
     .loading-animation p {
         margin-top: 16px;
         font-size: 14px;
+    }
+    
+    .copy-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        z-index: 9999;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        animation: fadeInOut 2s ease-in-out;
+    }
+    
+    @keyframes fadeInOut {
+        0% { opacity: 0; }
+        20% { opacity: 1; }
+        80% { opacity: 1; }
+        100% { opacity: 0; }
     }
 </style>
 {% endblock %}
